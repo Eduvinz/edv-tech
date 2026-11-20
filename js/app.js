@@ -6,6 +6,9 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const clp = (n) => '$' + Math.round(n).toLocaleString('es-CL');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const WHATSAPP = '56975512376';
+// Cada reserva llega por correo a EDV TECH (FormSubmit, gratis y sin servidor propio).
+// Tras activar el correo, FormSubmit entrega un alias aleatorio: reemplazar la dirección por ese alias.
+const MAIL_ENDPOINT = 'https://formsubmit.co/ajax/eduardovicencioez@gmail.com';
 const STORE = 'edv_reservas';
 
 /* ================================================================== */
@@ -509,6 +512,7 @@ function submit() {
     : `Hola EDV TECH, agendé el servicio ${r.code}\n• Equipo: ${r.device} ${r.modelo}\n• Problema: ${r.problems.join(', ')}\n• ${r.descripcion}\n• Modalidad: ${mode}\n• Fecha: ${fecha} ${r.slot}\n${r.photos.length ? `• Tengo ${r.photos.length} foto(s) para enviarles` : ''}`;
   $('#waLink').href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
   $('#confirmModal').classList.add('show');
+  sendMail(r, mode, fecha);
 
   // reinicio
   form.reset(); Object.assign(state, { device: null, problems: new Set(), photos: [], mode: null, date: null, slot: null });
@@ -517,6 +521,34 @@ function submit() {
   $('#addrBlock').classList.remove('show'); $('#callBlock').classList.remove('show');
   goStep(1, false);
   $('#trackCode').value = r.code;
+}
+
+// Envía la reserva al correo de EDV TECH. Las fotos no van adjuntas (el plan gratis no las manda bien):
+// el correo dice cuántas subió el cliente y se le pide mandarlas por WhatsApp.
+async function sendMail(r, mode, fecha) {
+  const sw = r.tipo === 'software';
+  const lugar = (r.mode === 'llamada' || r.mode === 'video') ? r.plataforma : (r.mode === 'taller' ? 'Taller EDV TECH' : `${r.direccion}, ${r.comuna}${r.referencia ? ' (' + r.referencia + ')' : ''}`);
+  const data = {
+    _subject: `Nueva reserva ${r.code} · ${sw ? 'Software' : 'Equipo'} · ${r.nombre}`,
+    _template: 'table', _captcha: 'false', _replyto: r.email,
+    'Código': r.code, 'Tipo': sw ? 'Software a medida' : 'Servicio técnico',
+    'Nombre': r.nombre, 'Teléfono': r.telefono, 'Correo': r.email, 'RUT': r.rut || '—',
+    [sw ? 'Proyecto' : 'Equipo']: `${r.device}${r.modelo ? ' · ' + r.modelo : ''}`,
+    [sw ? 'Necesita' : 'Problema']: r.problems.join(', ') || '—',
+    'Descripción': r.descripcion || '—',
+    'Modalidad': mode, 'Lugar': lugar || '—', 'Fecha': `${fecha} · ${r.slot}`,
+    'Fotos': r.photos.length ? `${r.photos.length} foto(s) en la reserva: pedirlas por WhatsApp` : 'Sin fotos',
+  };
+  if (sw) Object.assign(data, { 'Negocio': r.negocio || '—', 'Locales': r.locales || '—', 'Usuarios': r.usuarios || '—', 'Hoy usan': r.hoyUsan || '—', 'Presupuesto': r.presupuesto || '—' });
+  else Object.assign(data, { 'Antigüedad': r.antiguedad || '—', 'Garantía': r.garantia || '—', 'Desde cuándo': r.desde || '—', 'Urgencia': r.urgencia || '—', 'Respaldo': r.respaldo || '—', 'Estimado inicial': clp(r.estimado) });
+  try {
+    const res = await fetch(MAIL_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(data) });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || String(out.success) !== 'true') throw new Error(out.message || res.status);
+  } catch (err) {
+    console.warn('No se pudo enviar el correo de la reserva', err);
+    toast('Tu reserva quedó guardada, pero no pudimos avisarnos por correo. Escríbenos por WhatsApp con el botón de abajo.');
+  }
 }
 
 /* ================================================================== */
