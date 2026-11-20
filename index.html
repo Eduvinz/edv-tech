@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EDV TECH · Diagnóstico, cambio de piezas y software a medida · Viña del Mar y Concón</title>
+  <meta name="description" content="Diagnóstico de computadores, cambio de piezas, mantención y armado en Viña del Mar y Concón, V Región. Páginas web, CRM, inventario y sistemas a medida para empresas y locales." />
+  <link rel="icon" href="img/edv-mark.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <div class="topbar">
+    <span class="tb-loc">Viña del Mar · Concón · V Región</span>
+    <span class="tb-mid">Lunes a viernes 10:00–19:00 · Sábado 10:00–14:00</span>
+    <span class="tb-right"><a href="#seguimiento">Revisar mi reserva</a><a href="https://wa.me/56975512376" target="_blank" rel="noopener">WhatsApp</a></span>
+  </div>
+
+  <header class="nav" id="nav">
+    <a href="#inicio" class="brandmark" aria-label="EDV TECH inicio">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+        <rect width="48" height="48" fill="var(--acc)"/>
+        <rect x="10" y="10" width="6" height="28" fill="#000"/>
+        <rect x="10" y="10" width="24" height="6" fill="#000"/>
+        <rect x="10" y="21" width="17" height="6" fill="#000"/>
+        <rect x="10" y="32" width="24" height="6" fill="#000"/>
+        <circle cx="35.5" cy="24" r="3.2" fill="#000"/>
+      </svg>
+      <span class="wm"><b>EDV</b><i>TECH</i></span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#servicios">Equipos</a>
+      <a href="#software">Software</a>
+      <a href="#precios">Precios</a>
+      <a href="#marcas">Marcas</a>
+      <a href="#laboratorio">Despiece 3D</a>
+    </nav>
+    <div class="nav-right">
+      <a class="nav-wa" href="https://wa.me/56975512376" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp al +56 9 7551 2376" title="WhatsApp +56 9 7551 2376"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>
+      <a href="#reservar" class="btn btn-acc">Agendar</a>
+      <button class="burger" id="burger" aria-label="Menú"><span></span><span></span></button>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero" id="inicio">
+    <div class="hero-copy">
+      <p class="eyebrow">Servicio técnico y desarrollo · Viña del Mar y Concón</p>
+      <h1>Diagnóstico y cambio de piezas.<br><span class="acc">Software a la medida de tu negocio.</span></h1>
+      <p class="lead">Encontramos qué falla en tu computador y cambiamos la pieza por una nueva, con garantía. No hacemos reparación electrónica: si algo no tiene reemplazo, te lo decimos antes. Para empresas y locales hacemos páginas web, CRM y sistemas de inventario a su manera.</p>
+      <div class="hero-ctas">
+        <a href="#reservar" class="btn btn-acc">Agendar diagnóstico <span class="arr">→</span></a>
+        <a href="#software" class="btn btn-line">Cotizar un sistema</a>
+      </div>
+      <dl class="hero-facts">
+        <div><dt>Diagnóstico</dt><dd>$12.000<small>se descuenta si cambias la pieza</small></dd></div>
+        <div><dt>Garantía</dt><dd>90 días<small>en instalación</small></dd></div>
+        <div><dt>Software</dt><dd>Reunión<small>de levantamiento sin costo</small></dd></div>
+      </dl>
+    </div>
+    <figure class="hero-3d">
+      <canvas id="heroCanvas"></canvas>
+      <figcaption class="mono">
+        <span>Fig. 01</span>
+        <span>Ryzen 9 5900X · RTX 4090 · X570 · Corsair 4000D — despiece</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== Garantías (en vez de cifras infladas) ===== -->
+  <section class="promise">
+    <div><b>01</b><p>No cambiamos nada sin que apruebes el precio.</p></div>
+    <div><b>02</b><p>Piezas nuevas, con boleta y garantía de la tienda. Sin recargo.</p></div>
+    <div><b>03</b><p>Respaldamos tus archivos antes de tocar un disco.</p></div>
+    <div><b>04</b><p>El software es tuyo: dominio, código y datos a tu nombre.</p></div>
+  </section>
+
+  <!-- ===== Servicios ===== -->
+  <section class="section" id="servicios">
+    <header class="sec-head">
+      <span class="sec-num mono">01</span>
+      <h2>Equipos: diagnóstico y cambio de piezas</h2>
+      <p>Encontramos la falla y reemplazamos lo que haga falta por piezas nuevas. No reparamos placas ni hacemos microsoldadura. Precios desde, con IVA, solo mano de obra.</p>
+    </header>
+    <div class="svc-grid" id="serviceCards"></div>
+  </section>
+
+  <!-- ===== Software a medida ===== -->
+  <section class="section" id="software">
+    <header class="sec-head">
+      <span class="sec-num mono">02</span>
+      <h2>Software a medida para empresas y locales</h2>
+      <p>Páginas web, sistemas informativos, CRM e inventario hechos según cómo trabaja tu negocio. Nada de adaptarte a un programa genérico: el sistema se adapta a ti.</p>
+    </header>
+    <div class="svc-grid sw-grid" id="softwareCards"></div>
+    <div class="sw-detail">
+      <div>
+        <h3 class="sub mono">Cómo trabajamos</h3>
+        <ol class="sw-steps" id="swSteps"></ol>
+      </div>
+      <div>
+        <h3 class="sub mono">Ejemplo: inventario para una ferretería con 2 locales</h3>
+        <dl class="specs sw-specs">
+          <dt>Stock</dt><dd>por local y por bodega, en tiempo real</dd>
+          <dt>Ingreso</dt><dd>lector de código de barras o cámara del celular</dd>
+          <dt>Ventas</dt><dd>descuenta stock y registra quién vendió</dd>
+          <dt>Compras</dt><dd>órdenes a proveedores y recepción</dd>
+          <dt>Alertas</dt><dd>stock mínimo por WhatsApp o correo</dd>
+          <dt>Reportes</dt><dd>más vendidos, sin rotación, valorizado</dd>
+          <dt>Usuarios</dt><dd>dueño, vendedor y bodeguero con permisos distintos</dd>
+          <dt>Datos</dt><dd>se importa tu Excel actual el primer día</dd>
+        </dl>
+        <h3 class="sub mono">Rubros</h3>
+        <div class="rubros" id="rubros"></div>
+        <a href="#reservar" class="btn btn-acc" data-sw-book>Agendar reunión sin costo <span class="arr">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Laboratorio 3D ===== -->
+  <section class="section" id="laboratorio">
+    <header class="sec-head">
+      <span class="sec-num mono">03</span>
+      <h2>Despiece de un PC gamer</h2>
+      <p>Así va armado por dentro un equipo actual, con el cableado ordenado por detrás de la bandeja. Haz clic en cualquier pieza para ver qué es, cómo se instala y qué falla vemos en los diagnósticos.</p>
+    </header>
+    <div class="lab-grid">
+      <div class="lab-stage">
+        <canvas id="labCanvas"></canvas>
+        <div class="lab-toolbar mono">
+          <button data-act="assemble">Armar</button>
+          <button data-act="explode">Desarmar</button>
+          <button data-act="step">Paso a paso</button>
+          <button data-act="glass">Vidrio</button>
+          <button data-act="rgb">RGB</button>
+          <button data-act="spin">Girar</button>
+          <button data-act="zout" aria-label="Alejar">−</button>
+          <button data-act="zin" aria-label="Acercar">+</button>
+          <button data-act="reset">Centrar</button>
+        </div>
+        <div class="lab-slider mono">
+          <span>armado</span>
+          <input type="range" min="0" max="100" value="100" id="explodeRange" aria-label="Nivel de despiece" />
+          <span>despiece</span>
+        </div>
+        <div class="lab-step-banner mono" id="stepBanner"></div>
+        <div class="lab-loading mono" id="labLoading">cargando modelo…</div>
+      </div>
+      <aside class="lab-side">
+        <div class="part-card" id="partCard">
+          <p class="mono muted">Ninguna pieza seleccionada</p>
+          <p class="muted">Pasa el mouse por el modelo y haz clic en la placa madre, la tarjeta de video, la RAM, la fuente o los cables.</p>
+        </div>
+        <ol class="build-steps" id="buildSteps"></ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===== Marcas ===== -->
+  <section class="section" id="marcas">
+    <header class="sec-head">
+      <span class="sec-num mono">04</span>
+      <h2>Marcas que pasan por el taller</h2>
+      <p>Diagnosticamos, cambiamos piezas y actualizamos BIOS y drivers de todas. Los logos son de sus dueños y aparecen solo para indicar compatibilidad.</p>
+    </header>
+
+    <h3 class="sub mono">Chips gráficos</h3>
+    <div class="chipmakers" id="chipmakers"></div>
+
+    <h3 class="sub mono">Tarjetas de video</h3>
+    <div class="logo-grid" id="gpuBrands"></div>
+
+    <h3 class="sub mono">Placas madres</h3>
+    <div class="logo-grid" id="moboBrands"></div>
+
+    <h3 class="sub mono">Chipsets soportados</h3>
+    <div class="chipset-table" id="chipsets"></div>
+
+    <h3 class="sub mono">Componentes, notebooks, consolas y periféricos</h3>
+    <div class="logo-grid small" id="otherBrands"></div>
+  </section>
+
+  <!-- ===== Precios ===== -->
+  <section class="section" id="precios">
+    <header class="sec-head">
+      <span class="sec-num mono">05</span>
+      <h2>Precios</h2>
+      <p>Comparados con lo que cobran en promedio otros servicios técnicos y agencias de la V Región (referencial, noviembre de 2026). Piezas aparte, al precio de la tienda. En software los valores son desde: el precio final queda cerrado en la propuesta.</p>
+    </header>
+    <div class="price-filters mono" id="priceFilters"></div>
+    <div class="table-wrap">
+      <table class="price-table">
+        <thead class="mono"><tr><th>Servicio</th><th>Tiempo</th><th>Otros</th><th>EDV</th><th>Dif.</th></tr></thead>
+        <tbody id="priceBody"></tbody>
+      </table>
+    </div>
+
+    <div class="quoter">
+      <div class="quoter-left">
+        <h3>Arma tu presupuesto</h3>
+        <p class="muted">Marca lo que necesitas. Si después agendas, lo agregamos a la reserva.</p>
+        <div class="quoter-list" id="quoterList"></div>
+      </div>
+      <div class="quoter-right">
+        <span class="mono muted">Total EDV</span>
+        <div class="quoter-total" id="quoterTotal">$0</div>
+        <div class="mono muted">Otros: <s id="quoterMarket">$0</s></div>
+        <div class="quoter-save mono" id="quoterSave">Diferencia $0</div>
+        <a href="#reservar" class="btn btn-acc w100" id="quoterBook">Agendar con esto</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Modalidades ===== -->
+  <section class="section" id="modalidades">
+    <header class="sec-head">
+      <span class="sec-num mono">06</span>
+      <h2>Cómo te atendemos</h2>
+    </header>
+    <div class="modes">
+      <article><span class="mono">A</span><h3>En taller</h3><p>Traes el equipo, lo diagnosticamos en el banco de pruebas y te avisamos por WhatsApp qué pieza hay que cambiar.</p><em class="mono">Sin recargo</em></article>
+      <article><span class="mono">B</span><h3>A domicilio</h3><p>Vamos con herramientas y RAM, SSD y fuente de prueba. Si la pieza está disponible, la cambiamos ahí mismo.</p><em class="mono">+ $12.000 la visita</em></article>
+      <article><span class="mono">C</span><h3>En tu empresa</h3><p>Mantención de los equipos de la oficina o el local, y reuniones de levantamiento para sistemas a medida.</p><em class="mono">Levantamiento sin costo</em></article>
+      <article><span class="mono">D</span><h3>Por llamada</h3><p>Asesoría de compra, configuración y reuniones de avance de tu proyecto. Si hace falta, AnyDesk con tu permiso.</p><em class="mono">15 min sin costo</em></article>
+    </div>
+  </section>
+
+  <!-- ===== Reserva ===== -->
+  <section class="section" id="reservar">
+    <header class="sec-head">
+      <span class="sec-num mono">07</span>
+      <h2>Agendar</h2>
+      <p>Cinco pasos, para tu equipo o para un proyecto de software. Las fotos ayudan harto: pantallazos del error, la etiqueta con el modelo o tu planilla actual.</p>
+    </header>
+
+    <div class="wizard" id="wizard">
+      <ol class="wizard-progress mono">
+        <li class="wp-step active" data-s="1"><i>1</i>Qué necesitas</li>
+        <li class="wp-step" data-s="2"><i>2</i>Detalle y fotos</li>
+        <li class="wp-step" data-s="3"><i>3</i>Modalidad</li>
+        <li class="wp-step" data-s="4"><i>4</i>Fecha</li>
+        <li class="wp-step" data-s="5"><i>5</i>Datos</li>
+      </ol>
+
+      <form id="bookingForm" novalidate>
+        <div class="wstep active" data-step="1">
+          <h3>¿Qué necesitas?</h3>
+          <div class="opt-grid" id="deviceOpts"></div>
+          <div class="row2 hw-only">
+            <label class="field"><span>Marca y modelo, si lo sabes</span><input name="modelo" placeholder="Ej: Lenovo IdeaPad 3 15ALC6 · PC con Ryzen 5 5600 y RTX 3060" /></label>
+            <label class="field"><span>Antigüedad</span>
+              <select name="antiguedad"><option value="">—</option><option>Menos de 1 año</option><option>1 a 3 años</option><option>3 a 5 años</option><option>Más de 5 años</option></select>
+            </label>
+          </div>
+          <label class="field check hw-only"><input type="checkbox" name="garantia" /> <span>Todavía tiene garantía de la tienda o del fabricante</span></label>
+        </div>
+
+        <div class="wstep" data-step="2">
+          <h3 id="step2Title">¿Qué le pasa?</h3>
+          <div class="chips" id="problemChips"></div>
+          <div class="sw-only">
+            <div class="row2">
+              <label class="field"><span>Negocio o rubro</span><input name="negocio" placeholder="Ej: Ferretería Los Aromos" /></label>
+              <label class="field"><span>Locales o sucursales</span>
+                <select name="locales"><option value="">—</option><option>1 local</option><option>2 a 3 locales</option><option>4 o más</option><option>Solo en línea</option></select>
+              </label>
+            </div>
+            <div class="row2">
+              <label class="field"><span>¿Cuántas personas lo usarían?</span>
+                <select name="usuarios"><option value="">—</option><option>1 a 3</option><option>4 a 10</option><option>11 a 30</option><option>Más de 30</option></select>
+              </label>
+              <label class="field"><span>¿Qué usan hoy?</span>
+                <select name="hoyUsan"><option value="">—</option><option>Cuaderno o papel</option><option>Excel / Google Sheets</option><option>Otro sistema</option><option>Nada todavía</option></select>
+              </label>
+            </div>
+            <label class="field"><span>Presupuesto aproximado</span>
+              <select name="presupuesto"><option value="">Prefiero conversarlo</option><option>Menos de $500.000</option><option>$500.000 a $1.000.000</option><option>$1.000.000 a $2.500.000</option><option>Más de $2.500.000</option></select>
+            </label>
+          </div>
+          <label class="field"><span id="descLabel">Cuéntalo con tus palabras</span>
+            <textarea name="descripcion" rows="4" placeholder="Ej: Desde el jueves se apaga solo cuando juego, como a los 10 minutos. Los ventiladores suenan fuerte y una vez quedó la pantalla en negro."></textarea>
+          </label>
+          <div class="row2 hw-only">
+            <label class="field"><span>¿Desde cuándo?</span>
+              <select name="desde"><option value="">—</option><option>Hoy</option><option>Esta semana</option><option>Este mes</option><option>Hace más tiempo</option><option>Va y viene</option></select>
+            </label>
+            <label class="field"><span>Urgencia</span>
+              <select name="urgencia"><option value="normal">Normal · 2 a 4 días</option><option value="alta">Alta · 24 a 48 h (+$8.000)</option><option value="express">Mismo día (+$15.000)</option></select>
+            </label>
+          </div>
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="photoInput" accept="image/*" multiple hidden />
+            <b>Subir fotos</b>
+            <span class="muted" id="dzLabel">Arrastra aquí o haz clic. Hasta 6 imágenes.</span>
+          </div>
+          <div class="thumbs" id="thumbs"></div>
+        </div>
+
+        <div class="wstep" data-step="3">
+          <h3 id="step3Title">¿Dónde lo vemos?</h3>
+          <div class="opt-grid modes-pick" id="modeOpts"></div>
+          <div class="addr" id="addrBlock">
+            <div class="row2">
+              <label class="field"><span>Comuna</span><select name="comuna" id="comunaSel"></select></label>
+              <label class="field"><span>Dirección</span><input name="direccion" placeholder="Calle, número, depto." /></label>
+            </div>
+            <label class="field"><span>Indicaciones</span><input name="referencia" placeholder="Ej: conserjería, depto 402, estacionamiento de visitas" /></label>
+          </div>
+          <div class="call-block" id="callBlock">
+            <div class="row2">
+              <label class="field"><span>Por dónde</span>
+                <select name="plataforma"><option>Llamada telefónica</option><option>Videollamada WhatsApp</option><option>Google Meet</option><option>Zoom</option><option>AnyDesk (soporte remoto)</option></select>
+              </label>
+              <label class="field"><span>Tema</span>
+                <select name="asesoria"><option>Diagnóstico de una falla</option><option>Asesoría de compra o armado</option><option>Configuración y programas</option><option>Cotizar un cambio de piezas</option><option>Reunión de proyecto de software</option></select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="wstep" data-step="4">
+          <h3>Elige día y hora</h3>
+          <div class="sched">
+            <div class="cal">
+              <div class="cal-head"><button type="button" id="calPrev" aria-label="Mes anterior">←</button><b id="calTitle"></b><button type="button" id="calNext" aria-label="Mes siguiente">→</button></div>
+              <div class="cal-dow mono"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+              <div class="cal-days" id="calDays"></div>
+            </div>
+            <div class="slots-wrap">
+              <div class="mono muted" id="slotsTitle">Primero elige un día</div>
+              <div class="slots" id="slots"></div>
+              <p class="mono muted small">Los horarios tachados ya están tomados. Domingos cerrado.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="wstep" data-step="5">
+          <h3>Tus datos</h3>
+          <div class="final-grid">
+            <div>
+              <label class="field"><span>Nombre y apellido</span><input name="nombre" autocomplete="name" /></label>
+              <div class="row2">
+                <label class="field"><span>Teléfono / WhatsApp</span><input name="telefono" placeholder="+56 9 1234 5678" autocomplete="tel" /></label>
+                <label class="field"><span>Correo</span><input name="email" type="email" autocomplete="email" /></label>
+              </div>
+              <label class="field"><span>RUT (opcional, para boleta o factura)</span><input name="rut" placeholder="12.345.678-9" /></label>
+              <label class="field check hw-only"><input type="checkbox" name="respaldo" /> <span>Necesito que respalden mis archivos antes</span></label>
+              <label class="field check hw-only"><input type="checkbox" name="acepto" /> <span>Entiendo que el diagnóstico es referencial y el precio final se confirma antes de cambiar cualquier pieza</span></label>
+            </div>
+            <div class="summary" id="summary"></div>
+          </div>
+        </div>
+
+        <div class="wizard-nav">
+          <button type="button" class="btn btn-line" id="prevBtn">← Atrás</button>
+          <div class="wizard-err mono" id="wizErr"></div>
+          <button type="button" class="btn btn-acc" id="nextBtn">Siguiente →</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===== SEGUIMIENTO ===== -->
+  <section class="section" id="seguimiento">
+    <div class="track2">
+      <div>
+        <h2>¿Ya agendaste?</h2>
+        <p>Revisa en qué va tu equipo o tu proyecto con el código que te mandamos por WhatsApp.</p>
+      </div>
+      <form class="track-form" id="trackForm">
+        <input id="trackCode" placeholder="EDV-XXXXX" aria-label="Código de reserva" autocomplete="off" />
+        <button class="btn btn-acc">Ver estado</button>
+      </form>
+    </div>
+    <div class="track-card" id="trackResult"></div>
+  </section>
+
+  <!-- ===== Casos del taller ===== -->
+  <section class="section" id="casos">
+    <header class="sec-head">
+      <span class="sec-num mono">08</span>
+      <h2>Últimos trabajos</h2>
+      <p>Algunos equipos y proyectos de las últimas semanas.</p>
+    </header>
+    <div class="table-wrap">
+      <table class="case-table">
+        <thead class="mono"><tr><th>Equipo o cliente</th><th>Llegó con</th><th>Qué encontramos</th><th>Qué hicimos</th><th>Tiempo</th></tr></thead>
+        <tbody id="casesBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== FAQ ===== -->
+  <section class="section" id="faq">
+    <header class="sec-head">
+      <span class="sec-num mono">09</span>
+      <h2>Preguntas</h2>
+    </header>
+    <div class="faq" id="faqList"></div>
+  </section>
+
+  <footer class="footer">
+    <div class="foot-brand">
+      <span class="wm big"><b>EDV</b><i>TECH</i></span>
+      <p class="muted">Diagnóstico, cambio de piezas, mantención y armado de computadores. Páginas web y sistemas a medida. Viña del Mar y Concón, V Región.</p>
+    </div>
+    <div><b class="mono">Horario</b><span>Lun–Vie 10:00–19:00</span><span>Sáb 10:00–14:00</span></div>
+    <div><b class="mono">Contacto</b><a class="foot-wa" href="https://wa.me/56975512376" target="_blank" rel="noopener" aria-label="WhatsApp +56 9 7551 2376"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg><span>WhatsApp</span></a><span>contacto@edvtech.cl</span><span>Viña del Mar · Concón</span></div>
+    <div><b class="mono">Interno</b><a href="#admin">Panel de reservas</a></div>
+    <p class="foot-legal mono">© 2026 EDV TECH · Las marcas y logos pertenecen a sus respectivos dueños; se muestran solo para indicar compatibilidad.</p>
+    <p class="foot-legal foot-credits">Modelos 3D (CC BY 4.0, ajustados para el despiece):
+      <a href="https://sketchfab.com/models/34df3ba96cf94e71accdb5779c4b8694" target="_blank" rel="noopener">Corsair 4000D Airflow</a>, Kirigami ·
+      <a href="https://sketchfab.com/models/6f527569f14b4efc94c7072842bd41ac" target="_blank" rel="noopener">ASUS ROG RTX 4090</a>, MajdyModels ·
+      <a href="https://sketchfab.com/models/25b3659935774b1e9d73d8954be065d8" target="_blank" rel="noopener">X570 Prime</a>, Igor.Jop ·
+      <a href="https://sketchfab.com/models/912c9c42d2dc40fe95574345aae51ea0" target="_blank" rel="noopener">AM4 CPU</a>, Igor.Jop ·
+      <a href="https://sketchfab.com/models/8995a60d2dcc46b3be14c35c1c016c0a" target="_blank" rel="noopener">Corsair Dominator RGB</a>, MG990 ·
+      <a href="https://sketchfab.com/models/41b7bfda7eab40f8b13330913fd66fc2" target="_blank" rel="noopener">Samsung 990 Pro</a>, lime.ball.animations ·
+      <a href="https://sketchfab.com/models/1180bc1acfff4e4b8aa5cbd237c67e7e" target="_blank" rel="noopener">NZXT Aer P120</a>, jd24</p>
+  </footer>
+
+  <div class="modal" id="confirmModal">
+    <div class="modal-box">
+      <p class="mono acc">Reserva registrada</p>
+      <h3>Listo, te esperamos.</h3>
+      <p class="muted">Tu código de seguimiento:</p>
+      <div class="code mono" id="confirmCode">EDV-00000</div>
+      <p class="muted" id="confirmText"></p>
+      <div class="modal-actions">
+        <a class="btn btn-acc" id="waLink" target="_blank" rel="noopener">Mandar por WhatsApp</a>
+        <button class="btn btn-line" data-close>Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="adminModal">
+    <div class="modal-box admin-box">
+      <div class="admin-head">
+        <h3>Reservas</h3>
+        <div class="admin-actions">
+          <button class="btn btn-line btn-sm" id="exportCsv">Exportar CSV</button>
+          <button class="btn btn-line btn-sm" data-close>Cerrar</button>
+        </div>
+      </div>
+      <div class="admin-kpis" id="adminKpis"></div>
+      <div class="admin-list" id="adminList"></div>
+    </div>
+  </div>
+
+  <div class="toast mono" id="toast"></div>
+
+  <script type="module" src="js/pc3d.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
