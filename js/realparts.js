@@ -406,11 +406,10 @@ const kitITX = () => once('itx', async () => {
   const all = bake(caseS, MC);
   // la carcasa y sus mallas perforadas vienen juntas: se separan en lateral abierto, lateral de la placa, techo, frente y marco
   // solo triángulos enteros de cada lado: lo que cruza una esquina se queda en el marco (sin bordes rotos)
-  const [side, r1] = splitTris(all, (c) => c.x > 0.3, true);
-  const [rear, r2] = splitTris(r1, (c) => c.x < -1.15, true);
-  const [top, r3] = splitTris(r2, (c) => c.y > 1.72, true);
-  const [front, rest] = splitTris(r3, (c) => c.z > 1.93, true);
-  const out = { case: merge(rest), glass: merge(side), rear: merge(rear), top: merge(top), front: merge(front), cover: [] };
+  // En el Ncase solo sale el lateral abierto (por ahí salen las piezas); el resto de la carcasa es una sola
+  // pieza de aluminio con esquinas curvas y se queda entera, sin cortes.
+  const [side, rest] = splitTris(all, (c) => c.x > 0.3, true);
+  const out = { case: merge(rest), glass: merge(side), rear: [], top: [], front: [], cover: [] };
   out.floorY = boxOf(all).min.y;
 
   // Placa Mini-ITX hecha por código, completa y al detalle (ver buildItxBoard)
