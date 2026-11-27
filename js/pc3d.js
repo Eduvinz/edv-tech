@@ -5,8 +5,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { loadLogo, drawLogo } from './logos.js';
-import { applyRealParts } from './realparts.js';
+import { loadLogo, drawLogo } from './logos.js?v=20261126235544';
+import { applyRealParts } from './realparts.js?v=20261126235544';
 
 /* ------------------------------------------------------------------ */
 /* Fichas de cada componente (productos reales)                        */
