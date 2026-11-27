@@ -673,3 +673,9 @@ html { font-size: 16px; }
 .cookie-bar .btn { flex: none; }
 .cookie-bar.out { opacity: 0; transform: translateY(12px); }
 @media (max-width: 600px) { .cookie-bar { flex-direction: column; align-items: stretch; } .legal-toc { grid-template-columns: 1fr; } }
+
+/* v14: selector de equipos del despiece */
+.lab-variants { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.2rem; }
+.lab-variants button { padding: .55rem 1rem; border: 1px solid var(--line2); font-size: .9rem; font-weight: 600; color: var(--muted); transition: border-color .15s, color .15s, background .15s; }
+.lab-variants button:hover { border-color: var(--ink); color: var(--ink); }
+.lab-variants button.on { background: var(--acc); border-color: var(--acc); color: var(--acc-ink); }

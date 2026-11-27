@@ -102,6 +102,55 @@ export const PARTS_INFO = {
   },
 };
 
+/* ------------------------------------------------------------------ */
+/* Equipos que se turnan en el despiece                                */
+/* ------------------------------------------------------------------ */
+export const VARIANTS = [
+  { id: 'gamer', nombre: 'PC gamer', spec: 'Ryzen 9 5900X · RTX 4090 · disipador Noctua · Corsair 4000D', case: '4000d', cooler: 'noctua', gpu: 'rog4090' },
+  {
+    id: 'liquida', nombre: 'Refrigeración líquida', spec: 'Ryzen 9 5900X · RTX 4090 · AIO 240 mm · Corsair 4000D', case: '4000d', cooler: 'aio', gpu: 'rog4090',
+    info: {
+      cooler: {
+        tipo: 'Refrigeración líquida', logo: null, nombre: 'AIO de 240 mm (bomba + radiador)',
+        desc: 'Circuito cerrado: la bomba va sobre el procesador y lleva el calor por dos mangueras a un radiador de 240 mm al frente, con dos ventiladores de 120 mm metiendo aire fresco.',
+        specs: [['Radiador', '240 mm (2 × 120 mm)'], ['Montaje', 'Frontal, ventiladores en push'], ['Mangueras', '2, de goma negra'], ['Bomba', 'PWM al header AIO_PUMP'], ['Sockets', 'AM4 · AM5 · LGA1700 · LGA1851']],
+        instalar: 'Primero el radiador, con las mangueras abajo o al costado (nunca la bomba en el punto más alto); después la bomba sobre el procesador con pasta térmica, y la bomba al header AIO_PUMP a velocidad completa.',
+        fallas: 'Bomba que no gira (CPU a 95 °C en segundos), ruido de burbujas por montaje con la bomba arriba, ventiladores del radiador al revés, líquido evaporado después de 5 o 6 años.',
+        alt: 'Arctic Liquid Freezer III 240 · NZXT Kraken 240 · Corsair iCUE H100i · Lian Li Galahad II',
+      },
+    },
+  },
+  {
+    id: 'trabajo', nombre: 'PC de trabajo y edición', spec: 'Ryzen 9 5900X · RTX 4060 · Cooler Master · gabinete blanco', case: 'v2', cooler: 'cm', gpu: 'rtx4060',
+    info: {
+      case: {
+        tipo: 'Gabinete', logo: null, nombre: 'Mid-tower blanco con vidrio templado',
+        desc: 'Gabinete ATX blanco con cubierta de fuente, filtro superior y compartimiento trasero para el cableado. Silencioso y ordenado para una oficina o un estudio.',
+        specs: [['Formato', 'ATX mid-tower'], ['Panel lateral', 'Vidrio templado'], ['Ventiladores', '3 al frente + 1 atrás'], ['Filtros', 'Superior y frontal']],
+        instalar: 'Se sacan los dos laterales, se revisan los standoffs ATX y se pasa el cableado por detrás de la bandeja antes de poner la tarjeta de video.',
+        fallas: 'USB frontal sin conectar, filtros tapados que suben la temperatura, botón de encendido con el conector suelto.',
+        alt: 'Corsair 4000D Airflow · NZXT H5 Flow · Lian Li Lancool 207 · Montech AIR 903',
+      },
+      cooler: {
+        tipo: 'Disipador de CPU', logo: null, nombre: 'Cooler Master Hyper 212',
+        desc: 'Torre clásica con 4 heatpipes de cobre en contacto directo y un ventilador de 120 mm. Rinde bien con procesadores de hasta 150 W.',
+        specs: [['Altura', '158 mm'], ['Heatpipes', '4 × 6 mm, contacto directo'], ['Ventilador', '120 mm PWM'], ['Sockets', 'AM4 · AM5 · LGA1700']],
+        instalar: 'Se monta el backplate y las patas según el socket, pasta térmica en el centro, y se aprieta en cruz hasta el tope.',
+        fallas: 'Plástico protector de la base sin sacar, presión desigual que deja la CPU a 90 °C, ventilador soplando al revés.',
+        alt: 'Thermalright Peerless Assassin 120 SE · DeepCool AK400 · Noctua NH-U12S',
+      },
+      gpu: {
+        tipo: 'Tarjeta de video', logo: 'nvidia', nombre: 'Gigabyte GeForce RTX 4060 Gaming OC 8G',
+        desc: 'Ada Lovelace de bajo consumo: ideal para edición en Premiere y DaVinci, render con CUDA y NVENC, y juegos en 1080p. Un solo conector de 8 pines.',
+        specs: [['GPU', 'NVIDIA AD107'], ['Núcleos CUDA', '3.072'], ['Memoria', '8 GB GDDR6 · 128 bit'], ['Consumo', '115 W'], ['Conector', '1 × 8 pines'], ['Largo', '281 mm']],
+        instalar: 'Se sacan 2 tapas traseras, entra en el PCIe x16 de arriba hasta el clic, se atornilla y se conecta el cable PCIe de 8 pines.',
+        fallas: 'Monitor conectado a la placa en vez de a la tarjeta, drivers mezclados, cable PCIe a medio enchufar.',
+        alt: 'RTX 4060 Ti 16 GB · Radeon RX 7600 · Intel Arc B580',
+      },
+    },
+  },
+];
+
 export const BUILD_STEPS = [
   { id: 'mb', txt: 'Placa madre sobre los standoffs' },
   { id: 'cpu', txt: 'Procesador en el socket AM4' },
@@ -336,8 +385,11 @@ function bundle(points, rows, cols, gap, r, opts = {}) {
 /* Modelo                                                              */
 /* ------------------------------------------------------------------ */
 export class PCModel {
-  constructor(L) {
+  constructor(L, variant = VARIANTS[0]) {
     this.L = L || {};
+    this.variant = variant;
+    this.info = { ...PARTS_INFO, ...(variant.info || {}) };
+    this.floorY = -2.68;
     this.root = new THREE.Group();
     this.parts = {};
     this.spinners = [];
@@ -350,7 +402,7 @@ export class PCModel {
     this.root.scale.z = -1;
     this.root.traverse((o) => { if (o.userData.flip === 'y') o.scale.y *= -1; else if (o.userData.flip) o.scale.x *= -1; });
     this.screws = screws; // para los tornillos de las piezas reales
-    this.real = applyRealParts(this);
+    this.real = applyRealParts(this, this.variant);
   }
 
   // después de cambiar piezas por modelos reales: listas de mallas, rotores y cable de la tarjeta
@@ -1006,6 +1058,7 @@ class Viewer {
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.ShadowMaterial({ opacity: 0.55 }));
     floor.rotation.x = -Math.PI / 2; floor.position.y = -2.68; floor.receiveShadow = true; this.scene.add(floor);
+    this.floor = floor;
 
     this.visible = true;
     new IntersectionObserver(([e]) => { this.visible = e.isIntersecting; }).observe(canvas);
@@ -1052,6 +1105,13 @@ class Viewer {
     this.camera.position.copy(this.controls.target).addScaledVector(this.home, 10);
     if (this.fit) this.fitTo(this.fit.pc, this.fit.t, this.fit.margin);
   }
+  // cambia el equipo que se muestra (mantiene el ángulo de la cámara)
+  setModel(pc, t) {
+    if (this.pc) this.scene.remove(this.pc.root);
+    this.pc = pc; this.scene.add(pc.root);
+    this.floor.position.y = pc.floorY;
+    if (this.fit) this.fitTo(pc, t ?? this.fit.t, this.fit.margin);
+  }
   render() { this.controls.update(); this.renderer.render(this.scene, this.camera); }
 }
 
@@ -1070,26 +1130,35 @@ async function init() {
   const loaded = await Promise.all(names.map((n) => loadLogo(n, 1024)));
   const L = Object.fromEntries(names.map((n, i) => [n, loaded[i]]));
 
+  // cada visor guarda sus equipos ya armados (se crean la primera vez que se muestran)
+  const modelFor = (v, i) => {
+    v.models ||= [];
+    if (!v.models[i]) {
+      const pc = new PCModel(L, VARIANTS[i]);
+      v.models[i] = pc;
+      pc.real.then((ok) => { if (ok && v.pc === pc) { v.floor.position.y = pc.floorY; v.resize(); } });
+    }
+    return v.models[i];
+  };
+
   const heroCanvas = document.getElementById('heroCanvas');
   if (heroCanvas) {
     const v = new Viewer(heroCanvas, { camPos: [4.5, 3.0, -12.5], target: [1, 0, 0], autoRotate: true, zoom: false });
-    const pc = new PCModel(L);
-    v.scene.add(pc.root);
-    v.hero = true; v.pc = pc;
-    v.fitTo(pc, 0.7, 0.74);
-    pc.real.then((ok) => { if (ok) v.resize(); });
+    v.hero = true; v.variant = 0; v.cycle = 0;
+    v.modelFor = (i) => modelFor(v, i);
+    v.setModel(v.modelFor(0));
+    v.fitTo(v.pc, 0.7, 0.74);
     viewers.push(v);
   }
   const labCanvas = document.getElementById('labCanvas');
   if (labCanvas) {
     const v = new Viewer(labCanvas, { camPos: [3.2, 3.4, -13], target: [1.4, 0.3, -0.5] });
-    const pc = new PCModel(L);
-    v.scene.add(pc.root);
-    v.pc = pc;
+    v.variant = 0;
+    v.modelFor = (i) => modelFor(v, i);
+    v.setModel(v.modelFor(0));
     viewers.push(v);
-    setupLab(v, pc);
-    v.fitTo(pc, 1, 0.72);
-    pc.real.then((ok) => { if (ok) v.resize(); });
+    setupLab(v);
+    v.fitTo(v.pc, 1, 0.72);
     const ld = document.getElementById('labLoading');
     if (ld) { ld.classList.add('done'); setTimeout(() => ld.remove(), 500); }
   }
@@ -1103,6 +1172,16 @@ function loop() {
     if (!v.visible) return;
     if (v.hero) {
       const cyc = (Math.sin(t * 0.35 - Math.PI / 2) + 1) / 2;
+      const n = Math.floor((t * 0.35) / (Math.PI * 2));
+      if (n !== v.cycle) {                                   // terminó un despiece completo y está armado de nuevo
+        v.cycle = n;
+        v.variant = (v.variant + 1) % VARIANTS.length;
+        v.setModel(v.modelFor(v.variant), 0.7);
+        Object.values(v.pc.parts).forEach((p) => { p.t = 0; p.target = 0; });
+        const cap = document.getElementById('heroSpec');
+        if (cap) cap.textContent = `${VARIANTS[v.variant].nombre}: ${VARIANTS[v.variant].spec}`;
+      }
+      if (cyc > 0.5) v.modelFor((v.variant + 1) % VARIANTS.length); // prepara el siguiente mientras se ve este
       v.pc.setAll(Math.min(1, Math.max(0, (cyc - 0.2) / 0.6)) * 0.7);
     }
     v.pc.update(dt, t);
@@ -1114,7 +1193,7 @@ function loop() {
 /* ------------------------------------------------------------------ */
 /* Interacción del laboratorio                                         */
 /* ------------------------------------------------------------------ */
-function setupLab(v, pc) {
+function setupLab(v) {
   const card = document.getElementById('partCard');
   const stepsEl = document.getElementById('buildSteps');
   const banner = document.getElementById('stepBanner');
@@ -1132,15 +1211,15 @@ function setupLab(v, pc) {
   };
   const highlight = (id, color) => {
     if (!id) return;
-    pc.parts[id].meshes.forEach((m) => [].concat(m.material).forEach((mt) => { if (!mt.userData.rgb && mt.emissive) { mt.emissive.setHex(color); mt.emissiveIntensity = 1; } }));
+    v.pc.parts[id].meshes.forEach((m) => [].concat(m.material).forEach((mt) => { if (!mt.userData.rgb && mt.emissive) { mt.emissive.setHex(color); mt.emissiveIntensity = 1; } }));
   };
   const refresh = () => {
-    Object.keys(pc.parts).forEach((id) => highlight(id, 0x000000));
+    Object.keys(v.pc.parts).forEach((id) => highlight(id, 0x000000));
     if (hovered && hovered !== selected) highlight(hovered, 0x0d0d0d);
     if (selected) highlight(selected, 0x1c1c1c);
   };
   const showPart = async (id) => {
-    const p = PARTS_INFO[id]; if (!p) return;
+    const p = v.pc.info[id]; if (!p) return;
     card.innerHTML = `
       <span class="ptype">${p.tipo.toUpperCase()}</span>
       <span class="plogo-slot"></span>
@@ -1160,7 +1239,7 @@ function setupLab(v, pc) {
     const r = v.canvas.getBoundingClientRect();
     mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(mouse, v.camera);
-    const hit = ray.intersectObject(pc.root, true).find((h) => h.object.visible && h.object.userData.partId && h.object.userData.partId !== 'case' && !h.object.userData.isGlass);
+    const hit = ray.intersectObject(v.pc.root, true).find((h) => h.object.visible && h.object.userData.partId && h.object.userData.partId !== 'case' && !h.object.userData.isGlass);
     return hit ? hit.object.userData.partId : null;
   };
 
@@ -1175,7 +1254,7 @@ function setupLab(v, pc) {
 
   const stopAuto = () => { clearInterval(autoplay); autoplay = null; };
   const goStage = (n) => {
-    pc.setStage(n); markSteps(n, n - 1);
+    v.pc.setStage(n); markSteps(n, n - 1);
     if (n > 0) { const s = BUILD_STEPS[n - 1]; showBanner(`Paso ${n} de ${BUILD_STEPS.length} — ${s.txt}`); selected = s.id; refresh(); showPart(s.id); }
     range.value = Math.round((1 - n / BUILD_STEPS.length) * 100);
   };
@@ -1183,21 +1262,45 @@ function setupLab(v, pc) {
 
   document.querySelectorAll('.lab-toolbar button').forEach((b) => b.addEventListener('click', () => {
     const act = b.dataset.act;
-    if (act === 'assemble') { stopAuto(); pc.setAll(0); markSteps(BUILD_STEPS.length); range.value = 0; showBanner('Armado. Listo para la prueba de estrés.'); }
-    if (act === 'explode') { stopAuto(); pc.setAll(1); markSteps(0); range.value = 100; showBanner('Despiece. Haz clic en una pieza.'); }
-    if (act === 'step') { stopAuto(); pc.setStage(0); markSteps(0); let n = 0; autoplay = setInterval(() => { n++; goStage(n); if (n >= BUILD_STEPS.length) stopAuto(); }, 2000); }
-    if (act === 'glass') { pc.glass.userData.forceHide = !pc.glass.userData.forceHide; b.classList.toggle('on', pc.glass.userData.forceHide); }
-    if (act === 'rgb') { pc.rgbOn = !pc.rgbOn; b.classList.toggle('on', pc.rgbOn); }
+    if (act === 'assemble') { stopAuto(); v.pc.setAll(0); markSteps(BUILD_STEPS.length); range.value = 0; showBanner('Armado. Listo para la prueba de estrés.'); }
+    if (act === 'explode') { stopAuto(); v.pc.setAll(1); markSteps(0); range.value = 100; showBanner('Despiece. Haz clic en una pieza.'); }
+    if (act === 'step') { stopAuto(); v.pc.setStage(0); markSteps(0); let n = 0; autoplay = setInterval(() => { n++; goStage(n); if (n >= BUILD_STEPS.length) { stopAuto(); v.onStepsDone?.(); } }, 2000); }
+    if (act === 'glass') { v.pc.glass.userData.forceHide = !v.pc.glass.userData.forceHide; b.classList.toggle('on', v.pc.glass.userData.forceHide); }
+    if (act === 'rgb') { v.pc.rgbOn = !v.pc.rgbOn; b.classList.toggle('on', v.pc.rgbOn); }
     if (act === 'zin') v.zoomBy(0.8);
     if (act === 'zout') v.zoomBy(1.25);
     if (act === 'reset') { v.controls.autoRotate = false; document.querySelector('[data-act="spin"]')?.classList.remove('on'); v.resetView(); }
     if (act === 'spin') { v.controls.autoRotate = !v.controls.autoRotate; b.classList.toggle('on', v.controls.autoRotate); }
   }));
-  range.addEventListener('input', () => { stopAuto(); pc.setAll(range.value / 100); markSteps(range.value < 5 ? BUILD_STEPS.length : 0); });
+  range.addEventListener('input', () => { stopAuto(); v.pc.setAll(range.value / 100); markSteps(range.value < 5 ? BUILD_STEPS.length : 0); });
+
+  // equipos: botones para elegir y, al terminar el paso a paso, pasa solo al siguiente
+  const varEl = document.getElementById('labVariants');
+  const title = document.getElementById('labTitle');
+  const showVariant = (i, t = 1) => {
+    stopAuto(); selected = hovered = null;
+    v.variant = i;
+    v.setModel(v.modelFor(i), 1);
+    v.pc.setAll(t); Object.values(v.pc.parts).forEach((p) => { if (p.id !== 'case') p.t = t; });
+    if (v.pc.glass) v.pc.glass.userData.forceHide = document.querySelector('[data-act="glass"]')?.classList.contains('on') || false;
+    v.pc.rgbOn = document.querySelector('[data-act="rgb"]')?.classList.contains('on') || false;
+    markSteps(t ? 0 : BUILD_STEPS.length); range.value = Math.round(t * 100);
+    if (varEl) [...varEl.children].forEach((b, k) => { b.classList.toggle('on', k === i); b.setAttribute('aria-pressed', String(k === i)); });
+    if (title) title.textContent = `Despiece: ${VARIANTS[i].nombre.toLowerCase()}`;
+    card.innerHTML = `<span class="ptype">${VARIANTS[i].nombre.toUpperCase()}</span><h4>${VARIANTS[i].spec}</h4><p>Haz clic en cualquier pieza para ver qué es, cómo se instala y qué falla vemos en el taller.</p>`;
+  };
+  if (varEl) {
+    varEl.innerHTML = VARIANTS.map((x, k) => `<button type="button" aria-pressed="${k === 0}">${x.nombre}</button>`).join('');
+    varEl.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showVariant([...varEl.children].indexOf(b)); });
+  }
+  v.onStepsDone = () => setTimeout(() => {
+    if (autoplay) return;
+    const nx = (v.variant + 1) % VARIANTS.length;
+    showVariant(nx); showBanner(`Siguiente equipo: ${VARIANTS[nx].nombre}`);
+  }, 3500);
 
   // parte en despiece para invitar a explorar
-  pc.setAll(1); Object.values(pc.parts).forEach((p) => { if (p.id !== 'case') p.t = 1; });
-  markSteps(0);
+  showVariant(0);
 }
 
 init();

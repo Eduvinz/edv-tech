@@ -163,13 +163,134 @@ async function buildKit() {
   return kit;
 }
 
+/* ------------------------------------------------------------------ */
+/* Piezas de las otras variantes (se cargan solo cuando se muestran)   */
+/* ------------------------------------------------------------------ */
+const extra = {};
+const once = (k, f) => (extra[k] ||= f().catch((e) => { console.warn('Modelo 3D no disponible:', k, e); return null; }));
+
+// mueve en x los vértices que cumplen la condición (abre el compartimiento de cables detrás de la bandeja)
+function shiftX(list, cond, dx) {
+  list.forEach(({ g }) => {
+    const p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) if (cond(p.getX(i))) p.setX(i, p.getX(i) + dx);
+    p.needsUpdate = true; g.computeBoundingBox(); g.computeBoundingSphere();
+  });
+}
+
+/* Gabinete mid-tower blanco con vidrio (archivo en cm aprox.: x = profundidad, frente +x; z = ancho, vidrio +z).
+   Escala pareja; la bandeja cae en x = -1.13 y la cubierta de la fuente en y = -1.28, igual que el 4000D. */
+const kitCaseV2 = () => once('v2', async () => {
+  const sc = await load('computer-case-v2');
+  const k = 0.0262;
+  const M = new THREE.Matrix4().set(0, 0, k, -1.13 + 13.8 * k, 0, k, 0, -1.28 + 67.6 * k, k, 0, 0, -2.08 + 206.7 * k, 0, 0, 0, 1);
+  const all = bake(sc, M);
+  // el archivo viene en un solo gris oscuro: se pinta blanco satinado (acero con pintura en polvo)
+  const white = new THREE.MeshStandardMaterial({ color: 0xe8e7e3, roughness: 0.55, metalness: 0.15, envMapIntensity: 0.7 });
+  all.forEach((it) => { if (!/glass/i.test(it.mat.name || '')) it.mat = white; });
+  const by = (re) => all.filter((it) => re.test(it.name));
+  const side = by(/^side_panel/), chassis = by(/^main_chassi/);
+  // la bandeja casi toca el lateral trasero: se abre un compartimiento de cables de 0,33 como en un gabinete real
+  shiftX(side, () => true, -0.33);
+  shiftX(chassis, (x) => x < -1.14, -0.33);
+  const [cover, rest] = splitTris(chassis, (c) => c.x > 1.0 && c.y < -1.29);
+  return {
+    case: merge(rest), cover: merge(cover), glass: merge(by(/^side_glass/)), rear: merge(side),
+    front: merge(by(/^front_panel/)), top: merge(by(/^air_filter/)),
+    floorY: boxOf(all).min.y, frontFanZ: 2.9,
+  };
+});
+
+/* Refrigeración líquida AIO de 240 mm: radiador blanco al frente (con sus 2 ventiladores) y bomba sobre la CPU.
+   Las mangueras se dibujan por código para que lleguen del socket al radiador por encima de la RAM. */
+const kitAIO = (coolerBase) => once('aio', async () => {
+  const sc = await load('liquid-cooling');
+  const rad = bake(sc, basis([1, 0, 0], [0, 0, 1], [0, 1, 0]), ['Object_22', 'Object_23', 'Object_27', 'Object_29']);
+  place(rad, 1.0, ctr, [0, 0.95, 1.35]);
+  const pump = bake(sc, basis([-1, 0, 0], [0, 1, 0], [0, 0, 1]), ['Object_8', 'Object_11', 'Object_17', 'Object_20', 'Object_25', 'Object_27', 'Object_29']);
+  place(pump, 1.0, (b) => V(b.min.x, ctr(b).y, ctr(b).z), coolerBase);
+  const rb = boxOf(rad), pb = boxOf(pump);
+  const tubeM = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.55, metalness: 0.1 });
+  const fitM = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.3, metalness: 0.9 });
+  const items = [];
+  const cx = (pb.min.x + pb.max.x) / 2, [, sy, sz] = coolerBase;
+  [[0, -0.12], [0.16, 0.12]].forEach(([dx, dz], i) => {
+    const pts = [[cx, pb.max.y - 0.02, sz + dz], [cx + 0.05, pb.max.y + 0.22, sz + dz * 0.6], [-0.38 + dx, 2.0 - i * 0.04, 0.15 + dz * 0.3], [-0.38 + dx, 2.08 - i * 0.04, 0.85], [-0.3 + dx, 2.12 - i * 0.05, rb.min.z - 0.03]];
+    const g = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((p) => V(...p)), false, 'centripetal'), 80, 0.05, 14, false);
+    items.push({ g, mat: tubeM });
+    [pts[0], pts[pts.length - 1]].forEach((p, j) => {
+      const f = new THREE.CylinderGeometry(0.065, 0.065, 0.09, 20);
+      if (j === 1) f.rotateX(Math.PI / 2); f.translate(...p);
+      items.push({ g: f, mat: fitM });
+    });
+  });
+  return { items: merge([...rad, ...pump, ...items]) };
+});
+
+/* Cooler Master de torre (4 heatpipes de cobre). Archivo: alto en y, base en -y. */
+const kitCM = () => once('cm', async () => {
+  const sc = await load('cm-cpu-cooler');
+  const l = bake(sc, basis([0, 1, 0], [1, 0, 0], [0, 0, 1]));
+  place(l, 1.6 / boxOf(l).getSize(V()).x, (b) => V(b.min.x, ctr(b).y, ctr(b).z), [0, 0, 0]);
+  return { items: merge(l) };
+});
+
+/* Gigabyte GeForce RTX 4060 Gaming OC (281 mm). Archivo igual que la 4090: largo en x, bracket en -x. */
+const kit4060 = () => once('4060', async () => {
+  const sc = await load('rtx-4060-gigabyte');
+  const l = bake(sc, SWAP);
+  place(l, 2.84 / boxOf(l).getSize(V()).z, (b) => V(b.min.x, b.max.y, b.min.z), [-1.12, 0.54, -2.24]);
+  const b = boxOf(l);
+  return { items: merge(l), power: [b.max.x + 0.02, b.max.y - 0.14, (b.min.z + b.max.z) / 2 + 0.35] };
+});
+
+// Ojales de goma en la bandeja justo donde cada cable la cruza (el gabinete blanco no trae los ojales en esos puntos)
+function addGrommets(pc) {
+  const cab = pc.parts.cables.pieces[0].obj;
+  pc.root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(pc.root.matrixWorld).invert();
+  const cells = new Map(), v = V(), cell = 0.22;
+  cab.traverse((o) => {
+    if (!o.isMesh) return;
+    const m = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld), p = o.geometry.attributes.position;
+    for (let i = 0; i < p.count; i += 2) {
+      v.fromBufferAttribute(p, i).applyMatrix4(m);
+      if (v.x < -1.17 || v.x > -1.09 || v.y < -1.25) continue;
+      const k = Math.round(v.y / cell) + ':' + Math.round(v.z / cell);
+      const b = cells.get(k) || cells.set(k, new THREE.Box3()).get(k); b.expandByPoint(v);
+    }
+  });
+  const rubber = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9, metalness: 0 });
+  const hole = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 1, metalness: 0 });
+  const geos = [], holes = [];
+  // une celdas vecinas en un solo ojal por cruce
+  const boxes = [...cells.values()];
+  const merged = [];
+  boxes.forEach((b) => { const m = merged.find((x) => x.clone().expandByScalar(0.12).intersectsBox(b)); if (m) m.union(b); else merged.push(b.clone()); });
+  merged.forEach((b) => {
+    const c = b.getCenter(V()), sz = b.getSize(V());
+    const h = Math.max(0.16, sz.y + 0.1), w = Math.max(0.16, sz.z + 0.1);
+    const g = new THREE.BoxGeometry(0.03, h, w); g.translate(-1.118, c.y, c.z); geos.push(g);
+    const gh = new THREE.BoxGeometry(0.031, h - 0.05, w - 0.05); gh.translate(-1.116, c.y, c.z); holes.push(gh);
+  });
+  if (!geos.length) return;
+  [[geos, rubber], [holes, hole]].forEach(([list, mat]) => { const mesh = new THREE.Mesh(mergeGeometries(list), mat); mesh.receiveShadow = true; mesh.userData.partId = 'case'; pc.parts.case.pieces[0].obj.add(mesh); });
+}
+
 let kitP = null;
 const realKit = () => (kitP ||= buildKit().catch((e) => { console.warn('Modelos 3D reales no disponibles, quedan las piezas por código.', e); return null; }));
 
 /* ------------------------------------------------------------------ */
-export async function applyRealParts(pc) {
+export async function applyRealParts(pc, variant = {}) {
   const kit = await realKit();
   if (!kit) return false;
+  const [v2, aio, cm, g4060] = await Promise.all([
+    variant.case === 'v2' ? kitCaseV2() : null,
+    variant.cooler === 'aio' ? kitAIO(kit.coolerBase) : null,
+    variant.cooler === 'cm' ? kitCM() : null,
+    variant.gpu === 'rtx4060' ? kit4060() : null,
+  ]);
+  const shell = v2 || kit;
   const P = (id) => pc.parts[id].pieces;
 
   // origin: punto del equipo al que corresponde el (0,0,0) de la geometría
@@ -187,18 +308,22 @@ export async function applyRealParts(pc) {
   };
 
   // gabinete y paneles (vidrio, panel trasero, frontal, techo y tapa de la cubierta)
-  fill(P('case')[0], kit.case);
+  fill(P('case')[0], shell.case);
   const [glass, rearPanel, front, top, cover] = P('panels');
   const glassMat = glass.obj.material;
-  fill(glass, kit.glass, undefined, (m) => { m.userData.isGlass = true; if (m.material.transparent) { m.material = glassMat; m.renderOrder = 10; } });
-  fill(rearPanel, kit.rear);
-  fill(front, kit.front);
-  fill(top, kit.top);
-  fill(cover, kit.cover);
+  const isGlassMat = (m) => m.material.transparent || /glass/i.test(m.material.name || '');
+  fill(glass, shell.glass, undefined, (m) => { m.userData.isGlass = true; if (isGlassMat(m)) { m.material = glassMat; m.renderOrder = 10; } });
+  fill(rearPanel, shell.rear);
+  fill(front, shell.front, undefined, (m) => { if (isGlassMat(m)) { m.material = glassMat; m.renderOrder = 10; m.userData.isGlass = true; } });
+  fill(top, shell.top);
+  fill(cover, shell.cover);
+  pc.floorY = v2 ? v2.floorY : -2.68;
 
   fill(P('mb')[0], kit.mb);
   const cpu = P('cpu')[0]; cpu.base.set(...kit.cpuBase); fill(cpu, kit.cpu, kit.cpuBase);
   const cool = P('cooler')[0]; cool.base.set(...kit.coolerBase);
+  if (aio) fill(cool, aio.items);                                  // bomba, mangueras y radiador se mueven juntos
+  if (cm) fill(cool, cm.items, kit.coolerBase);
 
   // almacenamiento: 990 PRO real en el M.2_1; el segundo M.2 de la placa queda bajo su disipador (no se dibuja)
   const nv = pc.parts.nvme;
@@ -211,13 +336,19 @@ export async function applyRealParts(pc) {
   crucial.base.set(-1.142, 0.9, -0.55); // detrás de la placa, en el recorte de la bandeja
 
   P('ram').forEach((p, i) => { p.base.set(...kit.ramBases[i]); fill(p, kit.ram, kit.ramBases[i]); });
-  fill(P('gpu')[0], kit.gpu);
+  fill(P('gpu')[0], g4060 ? g4060.items : kit.gpu);
 
   // ventiladores: marco fijo + rotor que gira; 3 al frente y 1 atrás, dentro del marco de acero
-  P('fans').forEach((p, i) => {
-    const rearFan = i === 3;
+  // con AIO, el radiador trae sus 2 ventiladores: salen los 2 frontales de arriba
+  if (aio) {
+    const fp = pc.parts.fans;
+    fp.pieces.slice(0, 2).forEach((p) => p.obj.parent?.remove(p.obj));
+    fp.pieces = fp.pieces.slice(2);
+  }
+  pc.parts.fans.pieces.forEach((p) => {
+    const rearFan = p.rear ??= p.base.z < 0;
     p.obj.rotation.y = 0;
-    p.base.set(rearFan ? 0.15 : 0, rearFan ? 1.6 : p.base.y, rearFan ? -1.93 : 1.66);
+    p.base.set(rearFan ? 0.15 : 0, rearFan ? 1.6 : p.base.y, rearFan ? -1.93 : (v2 ? v2.frontFanZ : 1.66));
     fill(p, kit.fanFrame, [p.base.x, p.base.y, p.base.z]);
     kit.fanRotor.forEach(({ g, mat }) => {
       const r = new THREE.Mesh(g, mat); r.castShadow = true;
@@ -230,6 +361,7 @@ export async function applyRealParts(pc) {
     p.obj.add(pc.screws([[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([a, b]) => [a * 0.525, b * 0.525, zf, rearFan ? '-z' : '+z']), 0.03, 0x2a2a2a, 0x0a0a0a));
   });
 
-  pc.reroute12V(kit.gpuPower); // incluye afterSwap()
+  pc.reroute12V(g4060 ? g4060.power : kit.gpuPower); // incluye afterSwap()
+  if (v2) addGrommets(pc);
   return true;
 }
