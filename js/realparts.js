@@ -52,16 +52,17 @@ function place(list, s, anchor, to) {
   return d;
 }
 
-// Separa los triángulos de una malla según la posición de su centro
-function splitTris(list, pred) {
+// Separa los triángulos de una malla según la posición de su centro (o, con whole, de sus 3 vértices)
+function splitTris(list, pred, whole = false) {
   const yes = [], no = [];
   const v = V(), c = V();
   list.forEach((it) => {
     const idx = it.g.index.array, pos = it.g.attributes.position, A = [], B = [];
     for (let i = 0; i < idx.length; i += 3) {
-      c.set(0, 0, 0);
-      for (let k = 0; k < 3; k++) c.add(v.fromBufferAttribute(pos, idx[i + k]));
-      (pred(c.multiplyScalar(1 / 3)) ? A : B).push(idx[i], idx[i + 1], idx[i + 2]);
+      let ok;
+      if (whole) ok = [0, 1, 2].every((k) => pred(v.fromBufferAttribute(pos, idx[i + k])));
+      else { c.set(0, 0, 0); for (let k = 0; k < 3; k++) c.add(v.fromBufferAttribute(pos, idx[i + k])); ok = pred(c.multiplyScalar(1 / 3)); }
+      (ok ? A : B).push(idx[i], idx[i + 1], idx[i + 2]);
     }
     if (A.length) { const g = it.g.clone(); g.setIndex(A); yes.push({ ...it, g }); }
     if (B.length) { const g = it.g.clone(); g.setIndex(B); no.push({ ...it, g }); }
@@ -404,10 +405,11 @@ const kitITX = () => once('itx', async () => {
   const MC = new THREE.Matrix4().set(-k, 0, 0, -0.392, 0, k, 0, 0, 0, 0, k, 1.2, 0, 0, 0, 1);
   const all = bake(caseS, MC);
   // la carcasa y sus mallas perforadas vienen juntas: se separan en lateral abierto, lateral de la placa, techo, frente y marco
-  const [side, r1] = splitTris(all, (c) => c.x > 0.3);
-  const [rear, r2] = splitTris(r1, (c) => c.x < -1.15);
-  const [top, r3] = splitTris(r2, (c) => c.y > 1.72);
-  const [front, rest] = splitTris(r3, (c) => c.z > 1.93);
+  // solo triángulos enteros de cada lado: lo que cruza una esquina se queda en el marco (sin bordes rotos)
+  const [side, r1] = splitTris(all, (c) => c.x > 0.3, true);
+  const [rear, r2] = splitTris(r1, (c) => c.x < -1.15, true);
+  const [top, r3] = splitTris(r2, (c) => c.y > 1.72, true);
+  const [front, rest] = splitTris(r3, (c) => c.z > 1.93, true);
   const out = { case: merge(rest), glass: merge(side), rear: merge(rear), top: merge(top), front: merge(front), cover: [] };
   out.floorY = boxOf(all).min.y;
 
