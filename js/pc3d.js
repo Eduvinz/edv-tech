@@ -106,9 +106,46 @@ export const PARTS_INFO = {
 /* Equipos que se turnan en el despiece                                */
 /* ------------------------------------------------------------------ */
 export const VARIANTS = [
-  { id: 'gamer', nombre: 'PC gamer', spec: 'Ryzen 9 5900X · RTX 4090 · disipador Noctua · Corsair 4000D', case: '4000d', cooler: 'noctua', gpu: 'rog4090' },
   {
-    id: 'liquida', nombre: 'Refrigeración líquida', spec: 'Ryzen 9 5900X · RTX 4090 · AIO 240 mm · Corsair 4000D', case: '4000d', cooler: 'aio', gpu: 'rog4090',
+    id: 'gamer', nombre: 'PC gamer', spec: 'Ryzen 9 5900X · RTX 3080 Gaming X Trio · B550 AORUS · Noctua · Corsair 4000D',
+    case: '4000d', board: 'b550', cpu: 'am4', cooler: 'noctua', ram: 'trident', gpu: '3080trio', fans: 'lianli-black',
+    info: {
+      mb: {
+        tipo: 'Placa madre', logo: 'gigabyte', nombre: 'Gigabyte B550 AORUS ELITE V2',
+        desc: 'Placa ATX para Ryzen en AM4 con PCIe 4.0 en la tarjeta de video y en el M.2 principal, VRM de 12+2 fases y disipador sobre el M.2.',
+        specs: [['Socket', 'AM4'], ['Chipset', 'AMD B550'], ['Memoria', '4 × DDR4, hasta 128 GB'], ['PCIe', '4.0 x16'], ['M.2', '2 (uno con disipador)'], ['Red', '2.5 GbE']],
+        instalar: 'Va sobre 9 standoffs. El M.2 principal está bajo el disipador: se saca el tornillo, se pone el SSD y se vuelve a cerrar.',
+        fallas: 'BIOS antigua sin soporte para Ryzen 5000, LED de DRAM encendido por RAM mal puesta, M.2 que deshabilita un puerto SATA.',
+        alt: 'ASUS TUF GAMING B550-PLUS · MSI MAG B550 TOMAHAWK · ASRock B550 Steel Legend',
+      },
+      ram: {
+        tipo: 'Memoria RAM', logo: null, nombre: 'G.Skill Trident Z 32 GB',
+        desc: 'Kit de 2 × 16 GB DDR4 con disipador de aluminio en negro y naranja. Va en A2 y B2 para dual channel.',
+        specs: [['Capacidad', '2 × 16 GB'], ['Tipo', 'DDR4'], ['Velocidad', '3600 MT/s'], ['Latencias', 'CL16-19-19-39'], ['Perfil', 'XMP 2.0']],
+        instalar: 'Se abren los seguros, se alinea la muesca y se presiona parejo hasta que suene el clic en los dos lados.',
+        fallas: 'Pantallazos con XMP activado, slots equivocados que bajan el rendimiento, módulo mal puesto que no da imagen.',
+        alt: 'Corsair Vengeance LPX · Kingston FURY Beast · TeamGroup T-Force Vulcan Z',
+      },
+      gpu: {
+        tipo: 'Tarjeta de video', logo: 'nvidia', nombre: 'MSI GeForce RTX 3080 Gaming X Trio 10G',
+        desc: 'Ampere con 10 GB GDDR6X y el disipador TRI FROZR 2 de tres ventiladores: fresca y silenciosa para jugar en 1440p y 4K.',
+        specs: [['GPU', 'NVIDIA GA102'], ['Núcleos CUDA', '8.704'], ['Memoria', '10 GB GDDR6X · 320 bit'], ['Consumo', '340 W'], ['Conectores', '3 × 8 pines'], ['Largo', '323 mm']],
+        instalar: 'Se sacan 3 tapas traseras, entra en el PCIe x16 de arriba hasta el clic, se atornilla y se conectan los 3 cables de 8 pines (sin usar el mismo cable en "cola de chancho").',
+        fallas: 'Pads térmicos de la memoria secos (GDDR6X a 100 °C), ventiladores con rodamiento ruidoso, cables PCIe compartidos que causan apagones.',
+        alt: 'RTX 4070 SUPER · Radeon RX 7800 XT · RTX 3080 Ti',
+      },
+      fans: {
+        tipo: 'Ventilación', logo: null, nombre: 'Lian Li UNI FAN SL120 (negro)',
+        desc: 'Ventiladores de 120 mm que se enganchan entre sí: un solo cable para cada grupo y anillos ARGB en los bordes.',
+        specs: [['Tamaño', '120 mm'], ['Velocidad', '800 – 1.900 RPM'], ['Flujo', '58,5 CFM'], ['Conexión', 'Encadenados al controlador']],
+        instalar: 'Se deslizan uno contra otro hasta que encajan los conectores y se conecta solo el primero al controlador.',
+        fallas: 'Un ventilador mal encajado que no gira, controlador sin firmware actualizado.',
+        alt: 'Lian Li UNI FAN SL-INF · Corsair iCUE LINK RX120 · Arctic P12',
+      },
+    },
+  },
+  {
+    id: 'liquida', nombre: 'Refrigeración líquida', spec: 'Ryzen 9 5900X · ROG RTX 4090 · PRIME X570 · AIO 240 mm · Corsair 4000D', case: '4000d', board: 'x570', cpu: 'am4', cooler: 'aio', ram: 'dominator', gpu: 'rog4090', fans: 'nzxt',
     info: {
       cooler: {
         tipo: 'Refrigeración líquida', logo: null, nombre: 'AIO de 240 mm (bomba + radiador)',
@@ -121,8 +158,40 @@ export const VARIANTS = [
     },
   },
   {
-    id: 'trabajo', nombre: 'PC de trabajo y edición', spec: 'Ryzen 9 5900X · RTX 4060 · Cooler Master · gabinete blanco', case: 'v2', cooler: 'cm', gpu: 'rtx4060',
+    id: 'trabajo', nombre: 'PC de trabajo y edición', spec: 'Intel Core i9-11900K · RTX 4060 · MSI Z590 ACE · Cooler Master · gabinete blanco', case: 'v2', board: 'z590', cpu: 'i9', cooler: 'cm', ram: 'vengeance', gpu: 'rtx4060', fans: 'lianli-white',
     info: {
+      mb: {
+        tipo: 'Placa madre', logo: 'msi', nombre: 'MSI MEG Z590 ACE',
+        desc: 'Placa ATX de gama alta para Intel de 10.ª y 11.ª generación: VRM de 16+2 fases, 4 M.2 con disipador, Thunderbolt 4 y Wi-Fi 6E.',
+        specs: [['Socket', 'LGA1200'], ['Chipset', 'Intel Z590'], ['Memoria', '4 × DDR4, hasta 128 GB'], ['PCIe', '4.0 x16'], ['M.2', '4, con disipadores'], ['Red', '2.5 GbE · Wi-Fi 6E']],
+        instalar: 'En LGA1200 los pines están en la placa: se levanta la palanca, se apoya el procesador alineando las muescas y se baja sin tocar los pines.',
+        fallas: 'Pines del socket doblados al montar el procesador, M.2 bajo disipador con el plástico protector puesto, BIOS sin soporte para 11.ª generación.',
+        alt: 'ASUS ROG MAXIMUS XIII HERO · Gigabyte Z590 AORUS MASTER · ASRock Z590 Taichi',
+      },
+      cpu: {
+        tipo: 'Procesador', logo: 'intel', nombre: 'Intel Core i9-11900K',
+        desc: '8 núcleos y 16 hilos hasta 5,3 GHz: rinde muy bien en edición, programas de diseño y todo lo que use un solo núcleo rápido.',
+        specs: [['Núcleos / hilos', '8 / 16'], ['Frecuencia', 'hasta 5,3 GHz'], ['Caché', '16 MB'], ['TDP', '125 W'], ['Socket', 'LGA1200'], ['Gráficos', 'Intel UHD 750']],
+        instalar: 'Se alinea con las dos muescas del socket, se apoya sin arrastrar y se cierra la palanca; la tapa plástica sale sola.',
+        fallas: 'Temperaturas altas con disipadores chicos (consume más de 200 W en turbo), pines del socket dañados.',
+        alt: 'Intel Core i7-12700K · Intel Core i5-13600K · AMD Ryzen 9 5900X',
+      },
+      ram: {
+        tipo: 'Memoria RAM', logo: 'corsair', nombre: 'Corsair Vengeance RGB PRO 32 GB',
+        desc: 'Kit de 2 × 16 GB DDR4 con barra de luz RGB de 10 LED y disipador de aluminio.',
+        specs: [['Capacidad', '2 × 16 GB'], ['Tipo', 'DDR4'], ['Velocidad', '3200 MT/s'], ['Latencias', 'CL16-18-18-36'], ['Perfil', 'XMP 2.0']],
+        instalar: 'Se abren los seguros, se alinea la muesca y se presiona parejo hasta el clic.',
+        fallas: 'RGB que no se sincroniza sin iCUE, XMP inestable con 4 módulos.',
+        alt: 'G.Skill Trident Z RGB · Kingston FURY Beast RGB · TeamGroup T-Force Delta',
+      },
+      fans: {
+        tipo: 'Ventilación', logo: null, nombre: 'Lian Li UNI FAN SL120 (blanco)',
+        desc: 'Los mismos UNI FAN en blanco: se enganchan entre sí y ordenan el cableado del frente.',
+        specs: [['Tamaño', '120 mm'], ['Velocidad', '800 – 1.900 RPM'], ['Flujo', '58,5 CFM'], ['Conexión', 'Encadenados al controlador']],
+        instalar: 'Se encajan uno contra otro y se conecta solo el primero al controlador.',
+        fallas: 'Ventilador mal encajado que no gira.',
+        alt: 'Corsair iCUE LINK RX120 White · Arctic P12 White',
+      },
       case: {
         tipo: 'Gabinete', logo: null, nombre: 'Mid-tower blanco con vidrio templado',
         desc: 'Gabinete ATX blanco con cubierta de fuente, filtro superior y compartimiento trasero para el cableado. Silencioso y ordenado para una oficina o un estudio.',
@@ -150,7 +219,7 @@ export const VARIANTS = [
     },
   },
   {
-    id: 'chico', nombre: 'PC chico (ITX)', spec: 'Ryzen 9 5900X · RTX 4060 · Wraith Stealth · Ncase M1', case: 'ncase', cooler: 'wraith', gpu: 'rtx4060',
+    id: 'chico', nombre: 'PC chico (ITX)', spec: 'Ryzen 9 5900X · RTX 3070 Founders · Wraith Stealth · Ncase M1', case: 'ncase', board: 'itx', cpu: 'am4', cooler: 'wraith', ram: 'trident', gpu: '3070fe', fans: 'none',
     info: {
       case: {
         tipo: 'Gabinete', logo: null, nombre: 'Ncase M1 (Mini-ITX, 12,7 L)',
@@ -211,11 +280,22 @@ export const VARIANTS = [
     },
   },
 ];
-VARIANTS.find((x) => x.id === 'chico').info.gpu = VARIANTS.find((x) => x.id === 'trabajo').info.gpu;
+{
+  const chico = VARIANTS.find((x) => x.id === 'chico').info;
+  chico.ram = VARIANTS.find((x) => x.id === 'gamer').info.ram;
+  chico.gpu = {
+    tipo: 'Tarjeta de video', logo: 'nvidia', nombre: 'NVIDIA GeForce RTX 3070 Founders Edition',
+    desc: 'La versión de NVIDIA: corta (242 mm), de 2 ranuras y con ventiladores a ambos lados, ideal para gabinetes ITX.',
+    specs: [['GPU', 'NVIDIA GA104'], ['Núcleos CUDA', '5.888'], ['Memoria', '8 GB GDDR6 · 256 bit'], ['Consumo', '220 W'], ['Conector', '12 pines (adaptador 2 × 8)'], ['Largo', '242 mm']],
+    instalar: 'Entra en el PCIe x16 de la placa ITX; en el Ncase queda bajo la placa, con el aire entrando por el lateral.',
+    fallas: 'Adaptador de 12 pines mal enchufado, pasta térmica seca después de 3–4 años, ventiladores que suenan a baja velocidad.',
+    alt: 'RTX 4060 Ti · Radeon RX 7700 XT · RTX 4070 (versión corta)',
+  };
+}
 
 export const BUILD_STEPS = [
   { id: 'mb', txt: 'Placa madre sobre los standoffs' },
-  { id: 'cpu', txt: 'Procesador en el socket AM4' },
+  { id: 'cpu', txt: 'Procesador en el socket' },
   { id: 'nvme', txt: 'SSD: 2 NVMe en M.2 y 1 SATA atrás' },
   { id: 'ram', txt: 'RAM en A2 y B2 (dual channel)' },
   { id: 'cooler', txt: 'Pasta térmica y disipador' },
