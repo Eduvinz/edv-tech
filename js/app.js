@@ -1,5 +1,5 @@
 // EDV TECH — interfaz, precios, cotizador, reservas, seguimiento y panel
-import { loadLogo } from './logos.js?v=20261127000721';
+import { loadLogo } from './logos.js?v=20261127001042';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];

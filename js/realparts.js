@@ -433,10 +433,10 @@ const mapper = (B, k, d) => (pt) => V(...pt).applyMatrix4(B).multiplyScalar(k).a
 const BOARDS = {
   // Gigabyte B550 AORUS ELITE V2 (archivo acostado, componentes hacia +y, I/O en -x, borde superior en -z)
   b550: { file: 'b550-aorus-elite', B: basis([0, 0, 1], [1, 0, 0], [0, -1, 0]), k: 3.05 / 4.68, skip: ['Object_45'],
-    sock: [0.035, 0, -0.495], ram: [[0.93, 0, -0.529], [1.199, 0, -0.529]], pcie: [0, 0, 0.885] },
+    sock: [0.035, 0, -0.495], ram: [[0.93, 0, -0.529], [1.199, 0, -0.529]], pcie: [0, 0, 0.885], atx24: [1.49, 0, -0.495], eps: [-1.2, 0, -1.86] },
   // MSI MEG Z590 ACE (archivo acostado y girado: borde superior en +x, I/O en -z)
   z590: { file: 'msi-z590-ace', B: basis([0, 1, 0], [1, 0, 0], [0, 0, 1]), k: 100, skip: [],
-    sock: [0.00624, 0, 0.000465], ram: [[0.0064, 0, 0.00698], [0.0064, 0, 0.00872]], pcie: [-0.00335, 0, 0] },
+    sock: [0.00624, 0, 0.000465], ram: [[0.0064, 0, 0.00698], [0.0064, 0, 0.00872]], pcie: [-0.00335, 0, 0], atx24: [0.0045, 0, 0.0113], eps: [0.0138, 0, -0.0064] },
 };
 const kitBoard = (id) => once('board-' + id, async () => {
   const c = BOARDS[id];
@@ -447,7 +447,8 @@ const kitBoard = (id) => once('board-' + id, async () => {
   const sp = mp(c.sock);
   const cpuBase = [surfaceX(mb, sp.y, sp.z) ?? -1.03, sp.y, sp.z];
   const ramBases = c.ram.map((r) => { const q = mp(r); return [(surfaceX(mb, q.y, q.z) ?? -1.0) - 0.03, q.y, q.z]; });
-  return { mb, cpuBase, ramBases, ssdBase: null, pcieY: mp(c.pcie).y };
+  const conn = (pt) => { const q = mp(pt); return [(surfaceX(mb, q.y, q.z) ?? -1.0), q.y, q.z]; };
+  return { mb, cpuBase, ramBases, ssdBase: null, pcieY: mp(c.pcie).y, conn: { atx24: conn(c.atx24), eps: conn(c.eps) } };
 });
 
 // Intel Core i9-11900K (LGA1200, 37,5 mm)
@@ -609,13 +610,22 @@ export async function applyRealParts(pc, variant = {}) {
     cab.add(pc.bundle([[-0.62, 1.52, 0.82], [-0.66, 1.62, 0.35], [-0.76, 1.6, -0.55], [-0.9, 1.5, -1.12], [-0.99, 1.36, -1.27]], 2, 4, 0.026, 0.0115, { combs: [0.5] }));
     const pw = gPower;
     cab.add(pc.bundle([[-0.62, 0.48, 0.82], [-0.45, 0.3, 0.72], [-0.1, 0.05, pw[2] + 0.35], [pw[0] + 0.1, pw[1] + 0.2, pw[2] + 0.1], [pw[0] + 0.02, pw[1] + 0.1, pw[2]]], 2, 4, 0.024, 0.0105, { combs: [0.55] }));
+    pc.plug(cab, [-0.92, 0.82, 0.18], [0.14, 0.52, 0.1], { pins: [12, 2], latch: '+z' });
+    pc.plug(cab, [-0.93, 1.33, -1.27], [0.14, 0.1, 0.2], { pins: [2, 4] });
+    pc.plug(cab, [pw[0] + 0.06, pw[1] + 0.1, pw[2]], [0.12, 0.1, 0.18], { pins: [2, 4] });
+    [[1.2, 0.82], [1.52, 0.82], [0.5, 0.82]].forEach(([y, z]) => pc.plug(cab, [-0.62, y, z], [0.12, 0.1, 0.08], { latch: '-y' }));
     pc.root.add(cab);
     pc.parts.cables.pieces.push({ obj: cab, base: V(0, 0, 0), off: V(0, 0, 0) });
     // tornillos de la placa en sus agujeros de montaje (el de la esquina del I/O queda bajo la cubierta)
     const mbp = P('mb')[0], sc = pc.screws([[1.64, 0.06], [0.06, 1.64], [1.64, 1.64]].map(([u, v]) => [-1.104, 1.31 - v, -1.45 + u, '+x']), 0.026, 0x9a9a9a, 0x1a1a1a);
     sc.position.set(-mbp.base.x, -mbp.base.y, -mbp.base.z); mbp.obj.add(sc);
     pc.afterSwap();
-  } else pc.reroute12V(gPower); // incluye afterSwap()
+  } else {
+    // 24 pines y EPS al conector real de cada placa (la X570 ya los tiene en su lugar)
+    pc.rerouteBoard(board.conn || { atx24: [-1.06, 1.3, 0.45], eps: [-1.06, 2.2, -1.5] });
+    // 3 × 8 pines en la 3080 Trio, 1 × 8 en la 4060, 16 pines en las 4090
+    pc.reroute12V(gPower, variant.gpu === '3080trio' ? 3 : variant.gpu === 'rtx4060' ? 1 : 0);
+  }
   if (v2) addGrommets(pc);
   pc.update(0, 0);
   return true;

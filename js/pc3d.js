@@ -9,8 +9,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { loadLogo, drawLogo } from './logos.js?v=20261127000721';
-import { applyRealParts } from './realparts.js?v=20261127000721';
+import { loadLogo, drawLogo } from './logos.js?v=20261127001042';
+import { applyRealParts } from './realparts.js?v=20261127001042';
 
 /* ------------------------------------------------------------------ */
 /* Fichas de cada componente (productos reales)                        */
@@ -482,6 +482,9 @@ function makeFan({ size = 1.2, blades = 7, frame = 0x151515, blade = 0x1c1c1c, r
 }
 
 /* ---------- Mazo de cables mallados ---------- */
+const PLUG_M = M(0x0c0c0c, { metalness: 0.05, roughness: 0.55 });
+const PIN_M = M(0x000000, { metalness: 0, roughness: 1 });
+
 // punto de cable dentro del espacio útil del gabinete (antes del marco frontal y bajo el techo)
 const inCase = ([x, y, z]) => new THREE.Vector3(x, Math.min(y, 2.18), Math.min(z, 1.55));
 
@@ -564,13 +567,59 @@ export class PCModel {
   }
 
   // 12V-2x6 desde la fuente, sube por el ojal de la cubierta pegado al vidrio y entra al conector de la tarjeta
-  reroute12V([x, y, z]) {
+  // Conector (carcasa de plástico negro con sus terminales y la traba) al final de un cable.
+  // size: [x, y, z] del cuerpo; latch: lado de la traba (+y/-y/+z...)
+  plug(group, [x, y, z], size, { pins = null, latch = '+y' } = {}) {
+    const g = new THREE.Group();
+    const body = rbox(size[0], size[1], size[2], 0.008, PLUG_M); g.add(body);
+    if (pins) {                                  // cara de terminales: cuadrícula de agujeros
+      const [r, c] = pins, hole = [];
+      for (let i = 0; i < r; i++) for (let j = 0; j < c; j++) hole.push([size[0] * 0.2, size[1] / r * 0.55, size[2] / c * 0.55, -size[0] / 2 - 0.002, (i + 0.5) * size[1] / r - size[1] / 2, (j + 0.5) * size[2] / c - size[2] / 2]);
+      g.add(boxes(hole, PIN_M));
+    }
+    const lt = { '+y': [size[0] * 0.5, 0.02, size[2] * 0.25, 0, size[1] / 2 + 0.01, 0], '-y': [size[0] * 0.5, 0.02, size[2] * 0.25, 0, -size[1] / 2 - 0.01, 0], '+z': [size[0] * 0.5, size[1] * 0.25, 0.02, 0, 0, size[2] / 2 + 0.01] }[latch];
+    if (lt) g.add(boxes([lt], PLUG_M));
+    g.position.set(x, y, z);
+    g.traverse((o) => { o.userData.partId = 'cables'; if (o.isMesh) o.castShadow = true; });
+    group.add(g);
+    return g;
+  }
+
+  // Lleva el 24 pines y los EPS al lugar exacto de los conectores de cada placa, y les pone sus conectores
+  rerouteBoard({ atx24, eps }) {
     const cab = this.parts.cables.pieces[0].obj;
-    cab.remove(this.cable12v);
-    this.cable12v = bundle([[-0.1, -1.85, -0.53], [0.45, -1.72, -0.5], [0.82, -1.45, z], [0.82, -1.0, z], [0.82, y - 0.3, z], [0.78, y - 0.02, z], [0.6, y, z], [x + 0.05, y, z]], 2, 6, 0.022, 0.0095, { combs: [0.45, 0.62] });
-    this.cable12v.traverse((o) => { o.userData.partId = 'cables'; o.castShadow = true; });
-    cab.add(this.cable12v);
+    [this.cable24, this.cableEps, this.cableEps4, this.plugsBoard].forEach((o) => o && cab.remove(o));
+    const [ax, ay, az] = atx24, [ex, ey, ez] = eps;
+    this.cable24 = bundle([[-0.35, -1.85, -0.53], [-0.8, -1.9, -0.45], [-1.3, -1.75, -0.1], [-1.3, -0.4, az + 0.42], [-1.3, ay - 0.45, az + 0.42], [-1.13, ay - 0.25, az + 0.4], [-1.04, ay - 0.05, az + 0.26], [ax + 0.06, ay, az + 0.1]], 2, 12, 0.026, 0.0115, { combs: [0.42, 0.62] });
+    this.cableEps = bundle([[-0.6, -1.95, -0.53], [-1.28, -1.8, -0.7], [-1.32, 0.3, ez - 0.1], [-1.32, 2.0, ez + 0.15], [-1.13, 2.16, ez + 0.18], [-1.04, ey + 0.05, ez + 0.08], [ex + 0.07, ey + 0.05, ez]], 2, 4, 0.026, 0.0115, { combs: [0.45, 0.7] });
+    this.cableEps4 = bundle([[-0.45, -1.95, -0.53], [-1.26, -1.8, -0.62], [-1.36, 0.3, ez + 0.05], [-1.36, 1.95, ez + 0.36], [-1.13, 2.14, ez + 0.38], [-1.04, ey + 0.05, ez + 0.3], [ex + 0.07, ey + 0.05, ez + 0.24]], 2, 2, 0.026, 0.0115, { combs: [0.5] });
+    [this.cable24, this.cableEps, this.cableEps4].forEach((c) => { c.traverse((o) => { o.userData.partId = 'cables'; o.castShadow = true; }); cab.add(c); });
+    const pl = new THREE.Group();
+    this.plug(pl, [ax + 0.08, ay, az + 0.02], [0.14, 0.56, 0.11], { pins: [12, 2], latch: '+z' });       // 24 pines
+    this.plug(pl, [ex + 0.08, Math.min(ey, 2.16), ez], [0.14, 0.11, 0.22], { pins: [2, 4] });           // EPS 8
+    this.plug(pl, [ex + 0.08, Math.min(ey, 2.16), ez + 0.24], [0.14, 0.11, 0.12], { pins: [2, 2] });     // EPS 4
+    // enchufes modulares en la cara de la fuente
+    [[-0.35, -1.85], [-0.6, -1.95], [-0.45, -1.95], [-0.1, -1.85], [0.2, -1.85]].forEach(([x, y], i) => this.plug(pl, [x, y, -0.5], [i ? 0.14 : 0.3, 0.1, 0.06], { latch: '-y' }));
+    this.plugsBoard = pl; cab.add(pl);
+    this.afterSwap();
+  }
+
+  // Cables de energía de la tarjeta: n cables PCIe de 8 pines (o uno de 16 pines si n = 0), con sus conectores
+  reroute12V([x, y, z], n = 1) {
+    const cab = this.parts.cables.pieces[0].obj;
+    [this.cable12v, this.plugsGpu].forEach((o) => o && cab.remove(o));
+    const g = new THREE.Group(), cols = n ? n : 1, pitch = 0.2;
+    for (let k = 0; k < cols; k++) {
+      const dz = (k - (cols - 1) / 2) * pitch;
+      g.add(bundle([[-0.1 + k * 0.08, -1.85, -0.53], [0.45, -1.72, -0.5 + dz * 0.3], [0.82, -1.45, z + dz], [0.82, -1.0, z + dz], [0.82, y - 0.3, z + dz], [0.78, y - 0.02, z + dz], [0.6, y, z + dz], [x + 0.12, y, z + dz]], 2, n ? 4 : 6, 0.022, 0.0095, { combs: [0.45, 0.62] }));
+    }
+    this.cable12v = g;
+    const pl = new THREE.Group();
+    for (let k = 0; k < cols; k++) this.plug(pl, [x + 0.07, y, z + (k - (cols - 1) / 2) * pitch], [0.12, 0.1, n ? 0.18 : 0.26], { pins: n ? [2, 4] : [2, 6], latch: '+y' });
+    this.plugsGpu = pl;
+    [g, pl].forEach((o) => { o.traverse((c) => { c.userData.partId = 'cables'; c.castShadow = true; }); cab.add(o); });
     this.gpuGrom.position.z = z;
+    this.gpuGrom.scale.z = Math.max(1, cols * 0.9);
     this.afterSwap();
   }
 
@@ -1079,9 +1128,11 @@ export class PCModel {
     // Todo el ruteo va por el compartimiento trasero (x ≈ -1.3, entre la bandeja y el panel de acero)
     // y entra a la cámara principal por los ojales de goma, en tramos cortos y rectos.
     // 24 pines: modular de la fuente → atrás → sube → ojal derecho → conector ATX
-    cabG.add(bundle([[-0.35, -1.85, -0.53], [-0.8, -1.9, -0.45], [-1.3, -1.75, -0.1], [-1.3, -0.4, 0.95], [-1.3, 0.85, 0.95], [-1.13, 1.05, 0.95], [-1.04, 1.25, 0.8], [-1.02, 1.3, 0.55]], 2, 12, 0.026, 0.0115, { combs: [0.42, 0.62] }));
+    this.cable24 = bundle([[-0.35, -1.85, -0.53], [-0.8, -1.9, -0.45], [-1.3, -1.75, -0.1], [-1.3, -0.4, 0.95], [-1.3, 0.85, 0.95], [-1.13, 1.05, 0.95], [-1.04, 1.25, 0.8], [-1.02, 1.3, 0.55]], 2, 12, 0.026, 0.0115, { combs: [0.42, 0.62] });
+    cabG.add(this.cable24);
     // EPS 8 pines: atrás por el costado del socket, sale por el ojal superior
-    cabG.add(bundle([[-0.6, -1.95, -0.53], [-1.28, -1.8, -0.7], [-1.32, 0.3, -1.6], [-1.32, 2.05, -1.35], [-1.13, 2.24, -1.32], [-1.04, 2.22, -1.42], [-1.03, 2.22, -1.5]], 2, 4, 0.026, 0.0115, { combs: [0.45, 0.7] }));
+    this.cableEps = bundle([[-0.6, -1.95, -0.53], [-1.28, -1.8, -0.7], [-1.32, 0.3, -1.6], [-1.32, 2.05, -1.35], [-1.13, 2.24, -1.32], [-1.04, 2.22, -1.42], [-1.03, 2.22, -1.5]], 2, 4, 0.026, 0.0115, { combs: [0.45, 0.7] });
+    cabG.add(this.cableEps);
     // 12V-2x6: sube desde la fuente por el ojal de la cubierta, pegado al vidrio, y entra de lado al conector
     this.cable12v = bundle([[-0.1, -1.85, -0.53], [0.5, -1.72, -0.4], [0.8, -1.45, -0.22], [0.8, -1.0, -0.2], [0.74, -0.2, -0.18], [0.62, 0.2, -0.18], [0.5, 0.24, -0.18], [0.43, 0.24, -0.18]], 2, 6, 0.022, 0.0095, { combs: [0.45, 0.62] });
     cabG.add(this.cable12v);
@@ -1104,7 +1155,8 @@ export class PCModel {
     thin([[-0.45, 1.75, -2.0], [-0.9, 2.0, -1.95], [-1.04, 2.18, -1.3], [-1.04, 2.18, -1.12]]);
     thin([[-0.15, 2.15, -0.42], [-0.6, 2.25, -0.4], [-1.04, 2.18, -0.42]]);
     // EPS 4 pines (segundo conector de CPU de la X570-PRO), paralelo al de 8 pines
-    cabG.add(bundle([[-0.45, -1.95, -0.53], [-1.26, -1.8, -0.62], [-1.36, 0.3, -1.45], [-1.36, 2.0, -1.15], [-1.13, 2.2, -1.12], [-1.04, 2.2, -1.2], [-1.03, 2.2, -1.26]], 2, 2, 0.026, 0.0115, { combs: [0.5] }));
+    this.cableEps4 = bundle([[-0.45, -1.95, -0.53], [-1.26, -1.8, -0.62], [-1.36, 0.3, -1.45], [-1.36, 2.0, -1.15], [-1.13, 2.2, -1.12], [-1.04, 2.2, -1.2], [-1.03, 2.2, -1.26]], 2, 2, 0.026, 0.0115, { combs: [0.5] });
+    cabG.add(this.cableEps4);
     // headers del borde inferior de la placa: audio HD, USB 2.0 y panel frontal (PWR, RST, LED, HDD),
     // bajan hasta la unión de la bandeja con la cubierta y pasan al compartimiento de atrás
     const header = (z, n, colors, r = 0.007) => {
