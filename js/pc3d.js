@@ -5,8 +5,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { loadLogo, drawLogo } from './logos.js?v=20261126235544';
-import { applyRealParts } from './realparts.js?v=20261126235544';
+import { loadLogo, drawLogo } from './logos.js?v=20261126235753';
+import { applyRealParts } from './realparts.js?v=20261126235753';
 
 /* ------------------------------------------------------------------ */
 /* Fichas de cada componente (productos reales)                        */
@@ -1280,7 +1280,7 @@ async function init() {
     if (!v.models[i]) {
       const pc = new PCModel(L, VARIANTS[i]);
       v.models[i] = pc;
-      pc.real.then((ok) => { if (ok && v.pc === pc) { v.floor.position.y = pc.floorY; v.resize(); } });
+      pc.real.then((ok) => { pc.ready = true; if (ok && v.pc === pc) { v.floor.position.y = pc.floorY; v.resize(); } });
     }
     return v.models[i];
   };
@@ -1319,11 +1319,14 @@ function loop() {
       const n = Math.floor((t * 0.35) / (Math.PI * 2));
       if (n !== v.cycle) {                                   // terminó un despiece completo y está armado de nuevo
         v.cycle = n;
-        v.variant = (v.variant + 1) % VARIANTS.length;
-        v.setModel(v.modelFor(v.variant), 0.7);
-        Object.values(v.pc.parts).forEach((p) => { p.t = 0; p.target = 0; });
-        const cap = document.getElementById('heroSpec');
-        if (cap) cap.textContent = `${VARIANTS[v.variant].nombre}: ${VARIANTS[v.variant].spec}`;
+        const nx = (v.variant + 1) % VARIANTS.length, next = v.modelFor(nx);
+        if (next.ready) {                                    // solo cambia cuando el siguiente ya está armado con sus piezas reales
+          v.variant = nx;
+          v.setModel(next, 0.7);
+          Object.values(v.pc.parts).forEach((p) => { p.t = 0; p.target = 0; });
+          const cap = document.getElementById('heroSpec');
+          if (cap) cap.textContent = `${VARIANTS[v.variant].nombre}: ${VARIANTS[v.variant].spec}`;
+        }
       }
       if (cyc > 0.5) v.modelFor((v.variant + 1) % VARIANTS.length); // prepara el siguiente mientras se ve este
       v.pc.setAll(Math.min(1, Math.max(0, (cyc - 0.2) / 0.6)) * 0.7);
@@ -1421,10 +1424,20 @@ function setupLab(v) {
   // equipos: botones para elegir y, al terminar el paso a paso, pasa solo al siguiente
   const varEl = document.getElementById('labVariants');
   const title = document.getElementById('labTitle');
+  let pending = 0;
   const showVariant = (i, t = 1) => {
     stopAuto(); selected = hovered = null;
+    pending = i;
+    if (varEl) [...varEl.children].forEach((b, k) => { b.classList.toggle('on', k === i); b.setAttribute('aria-pressed', String(k === i)); });
+    const next = v.modelFor(i);
+    // mientras bajan sus piezas se sigue viendo el equipo anterior (nunca el armado de respaldo a medias)
+    if (!next.ready && v.pc && v.pc !== next) {
+      showBanner(`Cargando ${VARIANTS[i].nombre}…`);
+      next.real.then(() => { if (pending === i) showVariant(i, t); });
+      return;
+    }
     v.variant = i;
-    v.setModel(v.modelFor(i), 1);
+    v.setModel(next, 1);
     v.pc.setAll(t); Object.values(v.pc.parts).forEach((p) => { if (p.id !== 'case') p.t = t; });
     if (v.pc.glass) v.pc.glass.userData.forceHide = document.querySelector('[data-act="glass"]')?.classList.contains('on') || false;
     v.pc.rgbOn = document.querySelector('[data-act="rgb"]')?.classList.contains('on') || false;
