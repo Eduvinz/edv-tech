@@ -41,6 +41,7 @@ function bake(scene, m, skip = []) {
 
 const boxOf = (list) => { const b = new THREE.Box3(); list.forEach(({ g }) => { g.computeBoundingBox(); b.union(g.boundingBox); }); return b; };
 const ctr = (b) => b.getCenter(V());
+const boxTop = (list) => boxOf(list).max.x;
 
 // Escala uniforme y lleva el punto ancla de la pieza a `to`. Devuelve el desplazamiento aplicado.
 function place(list, s, anchor, to) {
@@ -203,6 +204,8 @@ export async function applyRealParts(pc) {
   const nv = pc.parts.nvme;
   const [ssd, wd, crucial] = nv.pieces;
   ssd.base.set(...kit.ssdBase); fill(ssd, kit.ssd, kit.ssdBase);
+  // tornillo del M.2 en el extremo opuesto al conector
+  ssd.obj.add(pc.screws([[boxTop(kit.ssd) + 0.004, 0, -0.395, '+x']], 0.02, 0x8a8a8a, 0x1a1a1a));
   wd.obj.parent?.remove(wd.obj);
   nv.pieces = nv.pieces.filter((p) => p !== wd);
   crucial.base.set(-1.142, 0.9, -0.55); // detrás de la placa, en el recorte de la bandeja
@@ -222,6 +225,9 @@ export async function applyRealParts(pc) {
       p.obj.add(r); pc.spinners.push(r);
     });
     p.obj.children.forEach((c) => { if (c.isLight) c.position.set(0, 0, rearFan ? 0.35 : -0.35); });
+    // 4 tornillos en las esquinas, del lado que da al marco del gabinete
+    const zf = rearFan ? -0.135 : 0.135;
+    p.obj.add(pc.screws([[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([a, b]) => [a * 0.525, b * 0.525, zf, rearFan ? '-z' : '+z']), 0.03, 0x2a2a2a, 0x0a0a0a));
   });
 
   pc.reroute12V(kit.gpuPower); // incluye afterSwap()

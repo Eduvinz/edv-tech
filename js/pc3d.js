@@ -349,6 +349,7 @@ export class PCModel {
     // La escena se refleja en z y cada texto hecho por código se vuelve a reflejar para leerse al derecho.
     this.root.scale.z = -1;
     this.root.traverse((o) => { if (o.userData.flip === 'y') o.scale.y *= -1; else if (o.userData.flip) o.scale.x *= -1; });
+    this.screws = screws; // para los tornillos de las piezas reales
     this.real = applyRealParts(this);
   }
 
@@ -807,6 +808,8 @@ export class PCModel {
     const pr = decal(psuRear, 1.5, 0.86, '-z', { roughness: 0.6 }); pr.material.transparent = false; pr.position.z = -0.802; psuG.add(pr);
     psuG.add(boxes([[0.32, 0.22, 0.04, 0.45, 0.12, -0.82], [0.1, 0.16, 0.05, 0.12, 0.12, -0.82]], M(0x050505, { metalness: 0.1, roughness: 0.6 })));
     psuG.add(boxes([[0.06, 0.04, 0.03, 0.12, 0.16, -0.85]], M(0xd0d0d0, { metalness: 0.2, roughness: 0.5 })));
+    // 4 tornillos de la fuente en la cara trasera (atornillan la fuente al panel de atrás)
+    psuG.add(screws([[-0.62, 0.3], [0.62, 0.3], [-0.62, -0.3], [0.62, -0.3]].map(([x, y]) => [x, y, -0.95, '-z']), 0.03, 0x2a2a2a, 0x0a0a0a));
     this.addPart('psu', [[psuG, [-0.3, -1.88, -1.35], [2.8, 0, 0]]]);
 
     /* ================= GPU ASUS TUF Gaming RTX 5070 Ti ================= */
@@ -900,6 +903,21 @@ export class PCModel {
     // ventilador trasero y ventiladores del disipador → headers CPU_FAN / CHA_FAN
     thin([[-0.45, 1.75, -2.0], [-0.9, 2.0, -1.95], [-1.04, 2.18, -1.3], [-1.04, 2.18, -1.12]]);
     thin([[-0.15, 2.15, -0.42], [-0.6, 2.25, -0.4], [-1.04, 2.18, -0.42]]);
+    // EPS 4 pines (segundo conector de CPU de la X570-PRO), paralelo al de 8 pines
+    cabG.add(bundle([[-0.45, -1.95, -0.53], [-1.26, -1.8, -0.62], [-1.36, 0.3, -1.45], [-1.36, 2.0, -1.15], [-1.13, 2.2, -1.12], [-1.04, 2.2, -1.2], [-1.03, 2.2, -1.26]], 2, 2, 0.026, 0.0115, { combs: [0.5] }));
+    // headers del borde inferior de la placa: audio HD, USB 2.0 y panel frontal (PWR, RST, LED, HDD),
+    // bajan hasta la unión de la bandeja con la cubierta y pasan al compartimiento de atrás
+    const header = (z, n, colors, r = 0.007) => {
+      for (let k = 0; k < n; k++) {
+        const dz = (k - (n - 1) / 2) * 0.018;
+        thin([[-1.07, -0.74, z + dz], [-1.065, -0.95, z + dz], [-1.06, -1.18, z + dz], [-1.18, -1.235, z + dz], [-1.3, -1.2, z + dz + 0.05], [-1.31, -0.6, z + dz + 0.3], [-1.31, 0.2, z + dz + 0.45]], colors[k % colors.length], r);
+      }
+    };
+    header(-1.78, 4, [0x111111, 0x1d1d1d], 0.008);                         // audio HD
+    header(-0.62, 3, [0x111111], 0.008);                                    // USB 2.0
+    header(0.3, 8, [0xd9d9d9, 0x111111, 0x3d7a1d, 0x111111, 0xb8321f, 0x111111, 0xd8a32a, 0x111111], 0.005); // panel frontal
+    // amarras de velcro sobre los mazos del compartimiento trasero
+    cabG.add(boxes([[0.1, 0.05, 0.3, -1.33, 0.9, -1.4], [0.1, 0.05, 0.3, -1.33, -0.4, -1.1], [0.1, 0.05, 0.34, -1.33, -0.9, 0.95], [0.1, 0.05, 0.3, -1.31, -0.2, 0.2]], M(0x1a1a1a, { metalness: 0, roughness: 0.95 })));
     this.addPart('cables', [[cabG, [0, 0, 0], [0, 0, 0]]]);
   }
 
@@ -998,14 +1016,22 @@ class Viewer {
     this.fit = { pc, t, margin };
     Object.values(pc.parts).forEach((p) => p.pieces.forEach((pp) => pp.obj.position.copy(pp.base).addScaledVector(pp.off, p.id === 'case' ? 0 : t)));
     pc.root.updateMatrixWorld(true);
-    const sphere = new THREE.Box3().setFromObject(pc.root).getBoundingSphere(new THREE.Sphere());
+    // el giro es alrededor del centro del gabinete (donde está el procesador), no del centro del despiece
+    const all = new THREE.Box3().setFromObject(pc.root);
+    const center = new THREE.Box3().setFromObject(pc.parts.case.pieces[0].obj).getCenter(new THREE.Vector3());
+    center.y += 0.3;
+    // radio desde el centro del gabinete hasta la pieza más lejana (promediado con el radio propio del despiece
+    // para que el equipo no quede chico cuando una pieza sale lejos hacia un lado)
+    const sphere = all.getBoundingSphere(new THREE.Sphere());
+    const far = Math.max(...[0, 1].flatMap((i) => [0, 1].flatMap((j) => [0, 1].map((k) => new THREE.Vector3(i ? all.max.x : all.min.x, j ? all.max.y : all.min.y, k ? all.max.z : all.min.z).distanceTo(center)))));
+    const radius = (far * 0.8 + sphere.radius * 0.2);
     pc.update(0, 0);
     const fov = THREE.MathUtils.degToRad(this.camera.fov);
     const fovH = 2 * Math.atan(Math.tan(fov / 2) * this.camera.aspect);
-    const dist = (sphere.radius / Math.sin(Math.min(fov, fovH) / 2)) * margin;
+    const dist = (radius / Math.sin(Math.min(fov, fovH) / 2)) * margin;
     const dir = this.camera.position.clone().sub(this.controls.target).normalize();
-    this.controls.target.copy(sphere.center);
-    this.camera.position.copy(sphere.center).addScaledVector(dir, dist);
+    this.controls.target.copy(center);
+    this.camera.position.copy(center).addScaledVector(dir, dist);
     this.controls.maxDistance = dist * 1.8;
     this.controls.minDistance = dist * 0.3;
   }
