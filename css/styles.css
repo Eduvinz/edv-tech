@@ -1,4 +1,4 @@
-/* EDV TECH — estilo "ficha técnica": negro puro, un acento, líneas finas, sin degradados */
+/* EDV Tech & Code — estilo "ficha técnica": negro puro, un acento, líneas finas, sin degradados */
 :root {
   --bg: #000;
   --ink: #ececea;
@@ -683,3 +683,6 @@ html { font-size: 16px; }
 
 /* v15: el código de cada servicio (S-01, W-01) sin las líneas del código de reserva */
 .svc .code { border: 0; padding: 0; margin: 0; font-size: .72rem; color: var(--dim); }
+
+/* v19: nombre EDV Tech & Code (el complemento no se corta en dos líneas) */
+.wm i { white-space: nowrap; }

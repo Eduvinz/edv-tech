@@ -1,4 +1,4 @@
-// EDV TECH — PC gamer modelado por código (three.js)
+// EDV Tech & Code — PC gamer modelado por código (three.js)
 // Escala: 1 unidad = 10 cm. Gabinete centrado en el origen; vidrio lateral en +X, frente en +Z.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -10,8 +10,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { loadLogo, drawLogo } from './logos.js?v=20261127001611';
-import { applyRealParts } from './realparts.js?v=20261127001611';
+import { loadLogo, drawLogo } from './logos.js?v=20261127144516';
+import { applyRealParts } from './realparts.js?v=20261127144516';
 
 /* ------------------------------------------------------------------ */
 /* Fichas de cada componente (productos reales)                        */
