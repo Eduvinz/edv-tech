@@ -7,7 +7,7 @@
   --line: #222220;
   --line2: #33332f;
   --cell: #0b0b0a;
-  --acc: #ff5a1f;
+  --acc: #2f9aa4; /* azul petróleo (claro, para fondo negro) */
   --acc-ink: #000;
   --soft: #c9c9c4;
   --scrim: rgba(0,0,0,.86);
@@ -609,8 +609,8 @@ html { font-size: 16px; }
   --line2: #bfb39c;
   --cell: #e6dece;
   --soft: #34312b;
-  --acc: #e2500f;
-  --acc-ink: #141412;
+  --acc: #1d6a73; /* azul petróleo (profundo, para fondo beige) */
+  --acc-ink: #ffffff;
   --ok: #3d7a1d;
   --bad: #b8321f;
   --scrim: rgba(239,232,218,.9);
