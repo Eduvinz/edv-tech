@@ -675,7 +675,11 @@ html { font-size: 16px; }
 @media (max-width: 600px) { .cookie-bar { flex-direction: column; align-items: stretch; } .legal-toc { grid-template-columns: 1fr; } }
 
 /* v14: selector de equipos del despiece */
-.lab-variants { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.2rem; }
+.lab-variants { grid-column: 2; display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.2rem; }
+.lab-variants button { white-space: nowrap; }
 .lab-variants button { padding: .55rem 1rem; border: 1px solid var(--line2); font-size: .9rem; font-weight: 600; color: var(--muted); transition: border-color .15s, color .15s, background .15s; }
 .lab-variants button:hover { border-color: var(--ink); color: var(--ink); }
 .lab-variants button.on { background: var(--acc); border-color: var(--acc); color: var(--acc-ink); }
+
+/* v15: el código de cada servicio (S-01, W-01) sin las líneas del código de reserva */
+.svc .code { border: 0; padding: 0; margin: 0; font-size: .72rem; color: var(--dim); }

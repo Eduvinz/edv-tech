@@ -1286,7 +1286,7 @@ function setupLab(v) {
     v.pc.rgbOn = document.querySelector('[data-act="rgb"]')?.classList.contains('on') || false;
     markSteps(t ? 0 : BUILD_STEPS.length); range.value = Math.round(t * 100);
     if (varEl) [...varEl.children].forEach((b, k) => { b.classList.toggle('on', k === i); b.setAttribute('aria-pressed', String(k === i)); });
-    if (title) title.textContent = `Despiece: ${VARIANTS[i].nombre.toLowerCase()}`;
+    if (title) title.textContent = `Despiece: ${VARIANTS[i].nombre}`;
     card.innerHTML = `<span class="ptype">${VARIANTS[i].nombre.toUpperCase()}</span><h4>${VARIANTS[i].spec}</h4><p>Haz clic en cualquier pieza para ver qué es, cómo se instala y qué falla vemos en el taller.</p>`;
   };
   if (varEl) {
