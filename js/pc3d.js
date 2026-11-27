@@ -8,9 +8,10 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { loadLogo, drawLogo } from './logos.js?v=20261127001042';
-import { applyRealParts } from './realparts.js?v=20261127001042';
+import { loadLogo, drawLogo } from './logos.js?v=20261127001611';
+import { applyRealParts } from './realparts.js?v=20261127001611';
 
 /* ------------------------------------------------------------------ */
 /* Fichas de cada componente (productos reales)                        */
@@ -545,7 +546,7 @@ export class PCModel {
     this.parts = {};
     this.spinners = [];
     this.rgb = [];
-    this.rgbOn = false;
+    this.rgbOn = true;
     this.leds = []; // luces puntuales que acompañan a los anillos ARGB, la RAM y la GPU
     this.build();
     // Disposición real del Corsair 4000D: mirando de frente, el vidrio queda a la izquierda.
@@ -1202,11 +1203,11 @@ export class PCModel {
     });
     this.spinners.forEach((r) => { r.rotation.z += dt * 7 * r.userData.speed; });
     this.leds.forEach(({ l, phase, base }) => {
-      if (this.rgbOn) { l.color.setHSL((time * 0.06 + phase) % 1, 0.9, 0.55); l.intensity = base * 1.4; }
+      if (this.rgbOn) { l.color.setHSL((time * 0.06 + phase) % 1, 0.9, 0.55); l.intensity = base * 2.2; }
       else { l.color.setRGB(1, 0.95, 0.88); l.intensity = base * 0.55; }
     });
     this.rgb.forEach(({ m, phase }) => {
-      if (this.rgbOn) { m.emissive.setHSL((time * 0.06 + phase) % 1, 0.9, 0.5); m.emissiveIntensity = 1.6; }
+      if (this.rgbOn) { m.emissive.setHSL((time * 0.06 + phase) % 1, 0.95, 0.5); m.emissiveIntensity = 2.2; }
       else { m.emissive.setRGB(1, 0.97, 0.92); m.emissiveIntensity = 0.45; }
     });
   }
@@ -1268,6 +1269,10 @@ class Viewer {
     this.ao.updateGtaoMaterial({ radius: 0.3, distanceExponent: 1.4, thickness: 1.0, scale: 1.0, samples: 12 });
     this.ao.blendIntensity = 0.85;
     this.composer.addPass(this.ao);
+    // brillo de las luces RGB: solo en la versión oscura (en la beige el fondo claro también brillaría)
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.4, 0.4, 0.88);
+    this.bloom.enabled = document.documentElement.dataset.theme !== 'light';
+    this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 
     this.visible = true;
@@ -1351,7 +1356,7 @@ const stageInput = (exposure) => {
   for (let i = 0; i < 200; i++) { const y = aces(x, exposure); x = x.map((xi, k) => Math.max(0, xi + (t[k] - y[k]) * 0.8)); }
   return new THREE.Color(x[0], x[1], x[2]);
 };
-window.addEventListener('edv-theme', () => viewers.forEach((v) => { v.renderer.setClearColor(stageColor(), 1); v.scene.background.copy(stageInput(v.renderer.toneMappingExposure)); }));
+window.addEventListener('edv-theme', () => viewers.forEach((v) => { v.renderer.setClearColor(stageColor(), 1); v.scene.background.copy(stageInput(v.renderer.toneMappingExposure)); v.bloom.enabled = document.documentElement.dataset.theme !== 'light'; }));
 
 async function init() {
   try { await document.fonts.ready; } catch { /* sin fuentes */ }
@@ -1525,7 +1530,7 @@ function setupLab(v) {
     v.setModel(next, 1);
     v.pc.setAll(t); Object.values(v.pc.parts).forEach((p) => { if (p.id !== 'case') p.t = t; });
     if (v.pc.glass) v.pc.glass.userData.forceHide = document.querySelector('[data-act="glass"]')?.classList.contains('on') || false;
-    v.pc.rgbOn = document.querySelector('[data-act="rgb"]')?.classList.contains('on') || false;
+    v.pc.rgbOn = document.querySelector('[data-act="rgb"]')?.classList.contains('on') ?? true;
     markSteps(t ? 0 : BUILD_STEPS.length); range.value = Math.round(t * 100);
     if (varEl) [...varEl.children].forEach((b, k) => { b.classList.toggle('on', k === i); b.setAttribute('aria-pressed', String(k === i)); });
     if (title) title.textContent = `Despiece: ${VARIANTS[i].nombre}`;

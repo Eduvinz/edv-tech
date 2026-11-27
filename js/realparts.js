@@ -495,6 +495,9 @@ const kitLianLi = (color) => once('lianli-' + color, async () => {
   return { frame: merge(frame), rotor: merge(rotor) };
 });
 
+// materiales que son luz RGB en cada archivo (barra de la RAM, anillos de los ventiladores, franjas y logos)
+const RGB_MATS = new Set(['argb', 'ASUS_Emissive_WhiteMat', 'material_4', 'material', 'rgbs', 'rgb2', 'Material.010', 'material_9', 'M_Cover']);
+
 let kitP = null;
 const realKit = () => (kitP ||= buildKit().catch((e) => { console.warn('Modelos 3D reales no disponibles, quedan las piezas por código.', e); return null; }));
 
@@ -525,7 +528,15 @@ export async function applyRealParts(pc, variant = {}) {
     [...obj.children].forEach((c) => { if (!c.isLight) obj.remove(c); });
     if (obj.isMesh) obj.geometry = new THREE.BufferGeometry();
     items.forEach(({ g, mat }) => {
-      const m = new THREE.Mesh(g, mat);
+      // zonas RGB del modelo real: material propio de este equipo, animado con el botón RGB
+      let mt = mat;
+      if (RGB_MATS.has(mat.name) && (mat.emissiveMap || (mat.emissive && mat.emissive.getHex() !== 0))) {
+        mt = mat.clone();
+        if (!mt.emissiveMap) mt.emissive = new THREE.Color(1, 1, 1);
+        mt.toneMapped = true;
+        pc.rgb.push({ m: mt, phase: (pc.rgb.length * 0.13) % 1 });
+      }
+      const m = new THREE.Mesh(g, mt);
       m.position.set(origin[0] - piece.base.x, origin[1] - piece.base.y, origin[2] - piece.base.z);
       m.castShadow = true; m.receiveShadow = true;
       tweak?.(m);
