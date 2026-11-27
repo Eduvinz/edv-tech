@@ -601,8 +601,19 @@ export async function applyRealParts(pc, variant = {}) {
     const drop = (id, keepFn = () => false) => { const part = pc.parts[id]; part.pieces.filter((x) => !keepFn(x)).forEach((x) => x.obj.parent?.remove(x.obj)); part.pieces = part.pieces.filter(keepFn); };
     drop('fans'); drop('cables'); drop('nvme', (x) => x === ssd);
     const psu = P('psu')[0];
-    psu.base.set(-0.78, 1.03, 1.4); psu.obj.rotation.set(0, 0, Math.PI / 2); psu.obj.scale.set(0.83, 0.74, 0.62);
+    psu.base.set(-0.78, 1.03, 1.4); psu.obj.rotation.set(0, Math.PI, Math.PI / 2); psu.obj.scale.set(0.83, 0.74, 0.62);
     psu.obj.traverse((o) => { if (o.userData.flip) o.visible = false; });   // sin la etiqueta de la RM850x
+    // cables cortos mallados (como los de una fuente SFX): 24 pines, EPS de 8 pines por arriba y PCIe a la tarjeta
+    const cab = new THREE.Group();
+    cab.add(pc.bundle([[-0.72, 1.2, 0.82], [-0.74, 1.16, 0.6], [-0.88, 1.02, 0.4], [-0.96, 0.86, 0.24], [-0.99, 0.82, 0.18]], 2, 12, 0.026, 0.0115, { combs: [0.45] }));
+    cab.add(pc.bundle([[-0.62, 1.52, 0.82], [-0.66, 1.62, 0.35], [-0.76, 1.6, -0.55], [-0.9, 1.5, -1.12], [-0.99, 1.36, -1.27]], 2, 4, 0.026, 0.0115, { combs: [0.5] }));
+    const pw = gPower;
+    cab.add(pc.bundle([[-0.62, 0.48, 0.82], [-0.45, 0.3, 0.72], [-0.1, 0.05, pw[2] + 0.35], [pw[0] + 0.1, pw[1] + 0.2, pw[2] + 0.1], [pw[0] + 0.02, pw[1] + 0.1, pw[2]]], 2, 4, 0.024, 0.0105, { combs: [0.55] }));
+    pc.root.add(cab);
+    pc.parts.cables.pieces.push({ obj: cab, base: V(0, 0, 0), off: V(0, 0, 0) });
+    // tornillos de la placa en sus agujeros de montaje (el de la esquina del I/O queda bajo la cubierta)
+    const mbp = P('mb')[0], sc = pc.screws([[1.64, 0.06], [0.06, 1.64], [1.64, 1.64]].map(([u, v]) => [-1.104, 1.31 - v, -1.45 + u, '+x']), 0.026, 0x9a9a9a, 0x1a1a1a);
+    sc.position.set(-mbp.base.x, -mbp.base.y, -mbp.base.z); mbp.obj.add(sc);
     pc.afterSwap();
   } else pc.reroute12V(gPower); // incluye afterSwap()
   if (v2) addGrommets(pc);

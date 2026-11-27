@@ -5,8 +5,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { loadLogo, drawLogo } from './logos.js?v=20261126235753';
-import { applyRealParts } from './realparts.js?v=20261126235753';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { loadLogo, drawLogo } from './logos.js?v=20261127000721';
+import { applyRealParts } from './realparts.js?v=20261127000721';
 
 /* ------------------------------------------------------------------ */
 /* Fichas de cada componente (productos reales)                        */
@@ -545,7 +549,7 @@ export class PCModel {
     // La escena se refleja en z y cada texto hecho por código se vuelve a reflejar para leerse al derecho.
     this.root.scale.z = -1;
     this.root.traverse((o) => { if (o.userData.flip === 'y') o.scale.y *= -1; else if (o.userData.flip) o.scale.x *= -1; });
-    this.screws = screws; // para los tornillos de las piezas reales
+    this.screws = screws; this.bundle = bundle; // para tornillos y cables de las piezas reales
     this.real = applyRealParts(this, this.variant);
   }
 
@@ -1172,7 +1176,7 @@ class Viewer {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(stageColor());
+    this.scene.background = stageInput(this.renderer.toneMappingExposure);
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
     this.scene.environmentIntensity = 0.95;
@@ -1191,7 +1195,7 @@ class Viewer {
     canvas.style.touchAction = 'pan-y';
 
     const key = new THREE.DirectionalLight(0xffffff, 3.2); key.position.set(7, 11, -8); key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
+    key.shadow.mapSize.set(4096, 4096); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
     Object.assign(key.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40 });
     this.scene.add(key);
     const fill = new THREE.DirectionalLight(0xe8eeff, 1.1); fill.position.set(-8, 4, -6); this.scene.add(fill);
@@ -1203,6 +1207,16 @@ class Viewer {
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.ShadowMaterial({ opacity: 0.55 }));
     floor.rotation.x = -Math.PI / 2; floor.position.y = -2.68; floor.receiveShadow = true; this.scene.add(floor);
     this.floor = floor;
+
+    // Postproceso: sombras de contacto entre piezas (GTAO), que dan profundidad a cada componente.
+    // Con multimuestreo (samples: 4) para no perder el antialias.
+    this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.ao = new GTAOPass(this.scene, this.camera, 1, 1);
+    this.ao.updateGtaoMaterial({ radius: 0.3, distanceExponent: 1.4, thickness: 1.0, scale: 1.0, samples: 12 });
+    this.ao.blendIntensity = 0.85;
+    this.composer.addPass(this.ao);
+    this.composer.addPass(new OutputPass());
 
     this.visible = true;
     new IntersectionObserver(([e]) => { this.visible = e.isIntersecting; }).observe(canvas);
@@ -1236,6 +1250,8 @@ class Viewer {
     const w = this.canvas.parentElement.clientWidth, h = this.canvas.parentElement.clientHeight;
     if (!w || !h) return;
     this.renderer.setSize(w, h, false);
+    this.composer.setPixelRatio(this.renderer.getPixelRatio());
+    this.composer.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     if (this.fit) this.fitTo(this.fit.pc, this.fit.t, this.fit.margin);
@@ -1256,7 +1272,7 @@ class Viewer {
     this.floor.position.y = pc.floorY;
     if (this.fit) this.fitTo(pc, t ?? this.fit.t, this.fit.margin);
   }
-  render() { this.controls.update(); this.renderer.render(this.scene, this.camera); }
+  render() { this.controls.update(); this.composer.render(); }
 }
 
 /* ------------------------------------------------------------------ */
@@ -1266,7 +1282,24 @@ const clock = new THREE.Clock();
 const viewers = [];
 // fondo del estudio según la versión de la página: negro o beige
 const stageColor = () => (document.documentElement.dataset.theme === 'light' ? 0xefe8da : 0x000000);
-window.addEventListener('edv-theme', () => viewers.forEach((v) => { v.renderer.setClearColor(stageColor(), 1); v.scene.background.set(stageColor()); }));
+// Con postproceso, el fondo también pasa por el tono ACES: se busca el color de entrada que, tras el tono,
+// da exactamente el beige (o negro) de la página.
+const ACES_IN = [[0.59719, 0.35458, 0.04823], [0.07600, 0.90834, 0.01566], [0.02840, 0.13383, 0.83777]];
+const ACES_OUT = [[1.60475, -0.53108, -0.07367], [-0.10208, 1.10813, -0.00605], [-0.00327, -0.07276, 1.07602]];
+const mul = (m, v) => m.map((r) => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+const aces = (c, exposure) => {
+  let v = mul(ACES_IN, c.map((x) => (x * exposure) / 0.6));
+  v = v.map((x) => (x * (x + 0.0245786) - 0.000090537) / (x * (0.983729 * x + 0.432951) + 0.238081));
+  return mul(ACES_OUT, v).map((x) => Math.min(1, Math.max(0, x)));
+};
+const stageInput = (exposure) => {
+  const target = new THREE.Color(stageColor());           // ya en lineal
+  const t = [target.r, target.g, target.b];
+  let x = [...t];
+  for (let i = 0; i < 200; i++) { const y = aces(x, exposure); x = x.map((xi, k) => Math.max(0, xi + (t[k] - y[k]) * 0.8)); }
+  return new THREE.Color(x[0], x[1], x[2]);
+};
+window.addEventListener('edv-theme', () => viewers.forEach((v) => { v.renderer.setClearColor(stageColor(), 1); v.scene.background.copy(stageInput(v.renderer.toneMappingExposure)); }));
 
 async function init() {
   try { await document.fonts.ready; } catch { /* sin fuentes */ }
