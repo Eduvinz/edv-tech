@@ -9,6 +9,22 @@ const WHATSAPP = '56975512376';
 // Cada reserva llega por correo a EDV TECH (FormSubmit, gratis y sin servidor propio).
 // Tras activar el correo, FormSubmit entrega un alias aleatorio: reemplazar la dirección por ese alias.
 const MAIL_ENDPOINT = 'https://formsubmit.co/ajax/eduardovicencioez@gmail.com';
+
+// Versión clara (beige y negro) / oscura: se guarda en el navegador y avisa al 3D
+function applyTheme(t) {
+  const light = t === 'light';
+  document.documentElement.dataset.theme = light ? 'light' : 'dark';
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#efe8da' : '#000000');
+  const b = document.getElementById('themeBtn');
+  if (b) b.setAttribute('aria-label', light ? 'Cambiar a versión oscura' : 'Cambiar a versión clara');
+  window.dispatchEvent(new CustomEvent('edv-theme', { detail: light ? 'light' : 'dark' }));
+}
+applyTheme(document.documentElement.dataset.theme);
+document.getElementById('themeBtn')?.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  try { localStorage.setItem('edv-theme', next); } catch { /* sin almacenamiento */ }
+  applyTheme(next);
+});
 const STORE = 'edv_reservas';
 
 /* ================================================================== */

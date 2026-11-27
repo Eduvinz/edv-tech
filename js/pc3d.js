@@ -951,14 +951,14 @@ class Viewer {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     // alta resolución: nunca por debajo de 1.5× aunque la pantalla sea 1×, hasta 2× en retina
     this.renderer.setPixelRatio(Math.min(2, Math.max(1.5, window.devicePixelRatio)));
-    this.renderer.setClearColor(0x000000, 1);
+    this.renderer.setClearColor(stageColor(), 1);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.3;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x000000);
+    this.scene.background = new THREE.Color(stageColor());
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
     this.scene.environmentIntensity = 0.95;
@@ -1034,6 +1034,9 @@ class Viewer {
 /* ------------------------------------------------------------------ */
 const clock = new THREE.Clock();
 const viewers = [];
+// fondo del estudio según la versión de la página: negro o beige
+const stageColor = () => (document.documentElement.dataset.theme === 'light' ? 0xefe8da : 0x000000);
+window.addEventListener('edv-theme', () => viewers.forEach((v) => { v.renderer.setClearColor(stageColor(), 1); v.scene.background.set(stageColor()); }));
 
 async function init() {
   try { await document.fonts.ready; } catch { /* sin fuentes */ }
