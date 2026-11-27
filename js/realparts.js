@@ -277,10 +277,129 @@ function addGrommets(pc) {
   [[geos, rubber], [holes, hole]].forEach(([list, mat]) => { const mesh = new THREE.Mesh(mergeGeometries(list), mat); mesh.receiveShadow = true; mesh.userData.partId = 'case'; pc.parts.case.pieces[0].obj.add(mesh); });
 }
 
-/* PC chico: Ncase M1 (ITX, ~13 L) + placa compacta recortada de la X570 + Wraith Stealth.
+/* Placa Mini-ITX hecha por código (170 × 170 mm), al nivel de detalle de la placa del primer diseño.
+   Coordenadas de la placa: u = distancia desde el borde del I/O (hacia el frente), v = distancia desde el borde superior
+   (hacia abajo), h = altura sobre el PCB. Se devuelve en coordenadas del equipo. */
+function buildItxBoard() {
+  const TOP = 1.31, IOE = -1.45, S = 1.7, PCB = 0.016, X0 = -1.12;
+  const P = (u, v, h) => [X0 + PCB + h, TOP - v, IOE + u];
+  const mats = {
+    black: new THREE.MeshStandardMaterial({ color: 0x0e0e0f, roughness: 0.55, metalness: 0.2 }),
+    plastic: new THREE.MeshStandardMaterial({ color: 0x151516, roughness: 0.7, metalness: 0.05 }),
+    alu: new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: 0.35, metalness: 0.85 }),
+    aluLight: new THREE.MeshStandardMaterial({ color: 0x6c6f74, roughness: 0.3, metalness: 0.9 }),
+    silver: new THREE.MeshStandardMaterial({ color: 0xc9cbce, roughness: 0.25, metalness: 0.95 }),
+    gold: new THREE.MeshStandardMaterial({ color: 0xd4a640, roughness: 0.25, metalness: 1 }),
+    socket: new THREE.MeshStandardMaterial({ color: 0xe9e4d6, roughness: 0.6, metalness: 0 }),
+    choke: new THREE.MeshStandardMaterial({ color: 0x2b2c2e, roughness: 0.45, metalness: 0.6 }),
+    cap: new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4, metalness: 0.5 }),
+    capTop: new THREE.MeshStandardMaterial({ color: 0xb8babd, roughness: 0.3, metalness: 0.9 }),
+    chip: new THREE.MeshStandardMaterial({ color: 0x101010, roughness: 0.35, metalness: 0.3 }),
+    smd: new THREE.MeshStandardMaterial({ color: 0x3a3226, roughness: 0.5, metalness: 0.4 }),
+    red: new THREE.MeshStandardMaterial({ color: 0xb0122a, roughness: 0.5, metalness: 0.1 }),
+    white: new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: 0.6, metalness: 0 }),
+    rgb: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xff2a55, emissiveIntensity: 0.9, roughness: 0.4 }),
+  };
+  const lists = {};
+  const add = (mat, g) => (lists[mat] ||= []).push(g);
+  // caja: tamaño (a lo largo de u, de v, alto h) y esquina (u, v) sobre el PCB
+  const bx = (mat, du, dv, dh, u, v, h0 = 0) => { const g = new THREE.BoxGeometry(dh, dv, du); g.translate(...P(u + du / 2, v + dv / 2, h0 + dh / 2)); add(mat, g); };
+  const cy = (mat, r, dh, u, v, h0 = 0, seg = 16) => { const g = new THREE.CylinderGeometry(r, r, dh, seg); g.rotateZ(Math.PI / 2); g.translate(...P(u, v, h0 + dh / 2)); add(mat, g); };
+
+  // --- PCB con textura: pistas, serigrafía, agujeros de montaje y zonas de componentes
+  const cv = document.createElement('canvas'); cv.width = cv.height = 1536;
+  const g = cv.getContext('2d'), W = 1536, k = W / S;
+  g.fillStyle = '#0d0e0f'; g.fillRect(0, 0, W, W);
+  g.strokeStyle = 'rgba(70,74,78,0.55)'; g.lineWidth = 2;
+  for (let i = 0; i < 260; i++) {                          // pistas en ángulos de 45°, como en un PCB real
+    let x = Math.random() * W, y = Math.random() * W; g.beginPath(); g.moveTo(x, y);
+    for (let s = 0; s < 4; s++) { const d = 30 + Math.random() * 140, a = (Math.floor(Math.random() * 8) * Math.PI) / 4; x += Math.cos(a) * d; y += Math.sin(a) * d; g.lineTo(x, y); }
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(150,150,145,0.55)';
+  for (let i = 0; i < 2600; i++) { g.beginPath(); g.arc(Math.random() * W, Math.random() * W, 1.6, 0, 7); g.fill(); }   // vías
+  g.fillStyle = '#d8d8d3'; g.font = '700 34px Arial, Helvetica, sans-serif';
+  g.fillText('ROG STRIX B550-I GAMING', 0.42 * k, 1.05 * k);
+  g.font = '500 20px Consolas, monospace';
+  [['CPU_FAN', 0.95, 0.06], ['AIO_PUMP', 1.12, 0.06], ['EATX12V', 0.12, 0.06], ['DDR4_A1', 1.24, 1.5], ['DDR4_B1', 1.42, 1.5], ['M.2_1 (SOCKET 3)', 0.42, 1.48], ['PCIEX16', 0.2, 1.57], ['SATA6G', 1.48, 0.98], ['F_PANEL', 1.42, 1.66], ['USB3_12', 1.55, 0.75], ['AAFP', 0.05, 1.66], ['CHA_FAN', 1.0, 1.66]]
+    .forEach(([t, u, v]) => g.fillText(t, u * k, v * k));
+  g.strokeStyle = 'rgba(216,216,211,0.8)'; g.lineWidth = 3; g.strokeRect(0.45 * k, 0.4 * k, 0.48 * k, 0.48 * k); // contorno del socket
+  [[0.06, 0.06], [1.64, 0.06], [0.06, 1.64], [1.64, 1.64]].forEach(([u, v]) => { g.fillStyle = '#b9b9b4'; g.beginPath(); g.arc(u * k, v * k, 22, 0, 7); g.fill(); g.fillStyle = '#0d0e0f'; g.beginPath(); g.arc(u * k, v * k, 11, 0, 7); g.fill(); });
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+  const pcbM = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0.15 });
+  const pcbG = new THREE.BoxGeometry(PCB, S, S);
+  pcbG.translate(...P(S / 2, S / 2, -PCB / 2));
+  // la cara que mira al vidrio (+x, primeros 4 vértices) lleva la textura: I/O a la izquierda, borde superior arriba
+  const uv = pcbG.attributes.uv, pp = pcbG.attributes.position;
+  for (let i = 0; i < 4; i++) uv.setXY(i, (pp.getZ(i) - IOE) / S, (pp.getY(i) - (TOP - S)) / S);
+  lists.pcb = [pcbG];
+
+  // --- cubierta del I/O trasero (alta, angulada, con franja RGB) y disipador del VRM con aletas
+  bx('black', 0.20, 1.05, 0.42, 0.0, 0.02);
+  bx('aluLight', 0.012, 0.95, 0.02, 0.18, 0.06, 0.40);
+  bx('rgb', 0.01, 0.6, 0.012, 0.202, 0.25, 0.30);
+  for (let i = 0; i < 14; i++) bx('alu', 0.045, 0.13, 0.24, 0.34 + i * 0.05, 0.01);            // aletas del VRM (bajas: el disipador pasa por encima)
+  bx('alu', 0.72, 0.02, 0.24, 0.33, 0.0);
+  // bobinas y condensadores sólidos del VRM
+  for (let i = 0; i < 8; i++) bx('choke', 0.07, 0.07, 0.07, 0.36 + i * 0.075, 0.29);
+  for (let i = 0; i < 7; i++) cy('cap', 0.022, 0.08, 0.40 + i * 0.08, 0.385), cy('capTop', 0.022, 0.005, 0.40 + i * 0.08, 0.385, 0.08);
+
+  // --- socket AM4 (blanco) con campo de pines, palanca y marco de retención
+  bx('socket', 0.40, 0.40, 0.055, 0.49, 0.44);
+  bx('silver', 0.012, 0.40, 0.012, 0.905, 0.44, 0.045);                                          // palanca
+  bx('plastic', 0.06, 0.52, 0.03, 0.40, 0.38); bx('plastic', 0.06, 0.52, 0.03, 0.92, 0.38);      // retención
+  for (let i = 0; i < 18; i++) for (let j = 0; j < 18; j++) if (!(i > 6 && i < 11 && j > 6 && j < 11)) bx('gold', 0.006, 0.006, 0.004, 0.515 + i * 0.02, 0.465 + j * 0.02, 0.055);
+  [[0.42, 0.36], [0.97, 0.36], [0.42, 0.94], [0.97, 0.94]].forEach(([u, v]) => { cy('silver', 0.018, 0.02, u, v); });
+
+  // --- 2 slots de RAM con seguros (A1 / B1)
+  [1.24, 1.38].forEach((u) => {
+    bx('plastic', 0.07, 1.36, 0.07, u, 0.12);
+    bx('plastic', 0.075, 0.05, 0.1, u - 0.003, 0.08); bx('plastic', 0.075, 0.05, 0.1, u - 0.003, 1.47);
+    bx('gold', 0.01, 1.3, 0.005, u + 0.03, 0.15, 0.07);
+  });
+
+  // --- conectores: 24 pines (borde derecho), 8 pines CPU (arriba), SATA, headers
+  bx('plastic', 0.09, 0.62, 0.11, 1.585, 0.18);
+  for (let i = 0; i < 12; i++) bx('chip', 0.06, 0.035, 0.005, 1.6, 0.2 + i * 0.05, 0.11);
+  bx('plastic', 0.2, 0.09, 0.11, 0.08, 0.0);                                                    // EPS 8 pines
+  [0.97, 1.09].forEach((v) => { bx('plastic', 0.1, 0.08, 0.06, 1.5, v); bx('chip', 0.06, 0.03, 0.004, 1.52, v + 0.025, 0.06); });   // SATA
+  [[1.0, 0.04], [1.16, 0.04], [1.0, 1.62], [1.42, 1.62], [0.06, 1.62], [1.6, 0.86]].forEach(([u, v]) => { bx('plastic', 0.1, 0.05, 0.05, u, v); for (let i = 0; i < 4; i++) bx('gold', 0.008, 0.008, 0.03, u + 0.01 + i * 0.022, v + 0.02, 0.05); });
+
+  // --- disipador del chipset + M.2 (con logo y franja), PCIe x16 reforzado
+  bx('alu', 0.9, 0.38, 0.07, 0.34, 1.08);
+  for (let i = 0; i < 12; i++) bx('aluLight', 0.9, 0.008, 0.012, 0.34, 1.1 + i * 0.03, 0.07);
+  bx('red', 0.12, 0.12, 0.01, 0.95, 1.2, 0.075);
+  bx('plastic', 0.89, 0.07, 0.11, 0.14, 1.56);
+  bx('silver', 0.89, 0.075, 0.02, 0.14, 1.556, 0.10);                                          // refuerzo metálico
+  bx('plastic', 0.05, 0.1, 0.12, 1.03, 1.55);                                                  // seguro
+
+  // --- audio (codec + condensadores dorados) junto al I/O, chips varios, batería
+  bx('chip', 0.08, 0.08, 0.012, 0.05, 1.18);
+  for (let i = 0; i < 6; i++) cy('gold', 0.02, 0.06, 0.06 + (i % 3) * 0.06, 1.32 + Math.floor(i / 3) * 0.08);
+  bx('chip', 0.12, 0.12, 0.015, 1.05, 0.95); bx('chip', 0.08, 0.08, 0.012, 0.18, 0.95); bx('chip', 0.06, 0.1, 0.012, 0.92, 1.0);
+  cy('silver', 0.06, 0.012, 1.25, 1.53, 0, 32);
+  // cientos de componentes SMD en las zonas libres
+  const free = [[1.1, 1.55, 0.9, 1.5], [0.32, 0.45, 0.42, 0.95], [1.0, 1.22, 0.4, 0.92], [0.05, 0.3, 1.1, 1.55], [0.35, 1.2, 1.47, 1.55]];
+  for (let n = 0; n < 520; n++) {
+    const [u0, u1, v0, v1] = free[n % free.length];
+    const u = u0 + Math.random() * (u1 - u0), v = v0 + Math.random() * (v1 - v0), big = Math.random() < 0.15;
+    bx(big ? 'chip' : 'smd', big ? 0.03 : 0.012, big ? 0.03 : 0.007, big ? 0.008 : 0.005, u, v);
+  }
+
+  const items = Object.entries(lists).map(([m, geos]) => ({ g: mergeGeometries(geos), mat: m === 'pcb' ? pcbM : mats[m] }));
+  items.forEach((it) => { it.g.computeBoundingBox(); it.g.computeBoundingSphere(); });
+  const sock = P(0.69, 0.64, 0.055);
+  return {
+    items,
+    cpuBase: [sock[0], sock[1], sock[2]],
+    ramBases: [1.275, 1.415].map((u) => { const p = P(u, 0.8, 0.07); return [p[0] - 0.04, p[1], p[2]]; }),
+  };
+}
+
+/* PC chico: Ncase M1 (ITX, ~13 L) + placa Mini-ITX hecha por código + Wraith Stealth.
    Archivo del Ncase: x = ancho (lado de la placa +x), y = alto, z = profundidad (panel trasero en -z). */
 const kitITX = () => once('itx', async () => {
-  const [caseS, mbS, wrS] = await Promise.all([load('ncase-m1'), load('asus-prime-x570'), load('amd-wraith-stealth')]);
+  const [caseS, wrS] = await Promise.all([load('ncase-m1'), load('amd-wraith-stealth')]);
   const k = 0.8;
   const MC = new THREE.Matrix4().set(-k, 0, 0, -0.392, 0, k, 0, 0, 0, 0, k, 1.2, 0, 0, 0, 1);
   const all = bake(caseS, MC);
@@ -292,66 +411,13 @@ const kitITX = () => once('itx', async () => {
   const out = { case: merge(rest), glass: merge(side), rear: merge(rear), top: merge(top), front: merge(front), cover: [] };
   out.floorY = boxOf(all).min.y;
 
-  // Placa compacta: se recorta la parte de arriba de la X570 (I/O, socket, RAM y M.2_1). El PCB se rehace
-  // como un rectángulo con la misma textura para que el borde quede limpio.
-  const raw = bake(mbS, SWAP).map((it) => ({ ...it, g: ensureIndex(it.g.toNonIndexed()) }));
-  const Z0 = -2.12, Z1 = 0.3, Y0 = -0.85, Y1 = 1.18;
-  // fuera: lo que queda bajo el borde y el disipador blanco del chipset (quedaría cortado)
-  const inCrop = (c) => c.z > Z0 && c.z < Z1 && c.y > Y0 && c.y < Y1 && !(c.z > -0.4 && c.y < -0.3);
-  const isPcb = (c, it) => /Mobo/.test(it.mat.name || '') && Math.abs(c.x - 0.098) < 0.004;
-  const keep = [], v = V(), c = V();
-  let uvMap = null, pcbMat = null;
-  raw.forEach((it) => {
-    const pos = it.g.attributes.position, uv = it.g.attributes.uv, idx = it.g.index.array, A = [];
-    for (let i = 0; i < idx.length; i += 3) {
-      c.set(0, 0, 0); for (let j = 0; j < 3; j++) c.add(v.fromBufferAttribute(pos, idx[i + j])); c.multiplyScalar(1 / 3);
-      if (isPcb(c, it)) {
-        if (!uvMap && uv) {                       // mapeo plano (z, y) → (u, v) a partir de un triángulo del PCB
-          const P = [0, 1, 2].map((j) => [pos.getZ(idx[i + j]), pos.getY(idx[i + j]), uv.getX(idx[i + j]), uv.getY(idx[i + j])]);
-          const det = (P[1][0] - P[0][0]) * (P[2][1] - P[0][1]) - (P[2][0] - P[0][0]) * (P[1][1] - P[0][1]);
-          if (Math.abs(det) > 1e-6) {
-            const solve = (t) => {
-              const a = ((P[1][t] - P[0][t]) * (P[2][1] - P[0][1]) - (P[2][t] - P[0][t]) * (P[1][1] - P[0][1])) / det;
-              const b = ((P[2][t] - P[0][t]) * (P[1][0] - P[0][0]) - (P[1][t] - P[0][t]) * (P[2][0] - P[0][0])) / det;
-              return (z, y) => P[0][t] + a * (z - P[0][0]) + b * (y - P[0][1]);
-            };
-            uvMap = [solve(2), solve(3)]; pcbMat = it.mat;
-          }
-        }
-        continue;
-      }
-      // el triángulo entero tiene que caer dentro del recorte (si no, quedan astillas largas fuera del borde)
-      if ([0, 1, 2].every((j) => inCrop(v.fromBufferAttribute(pos, idx[i + j])))) A.push(idx[i], idx[i + 1], idx[i + 2]);
-    }
-    if (A.length) { const g = it.g.clone(); g.setIndex(A); keep.push({ ...it, g }); }
-  });
-  if (uvMap) {
-    const g = new THREE.BufferGeometry();
-    const P = [[Z0, Y0], [Z1, Y0], [Z1, Y1], [Z0, Y1]];
-    g.setAttribute('position', new THREE.Float32BufferAttribute(P.flatMap(([z, y]) => [0.098, y, z]), 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(P.flatMap(() => [1, 0, 0]), 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(P.flatMap(([z, y]) => [uvMap[0](z, y), uvMap[1](z, y)]), 2));
-    g.setIndex([0, 2, 1, 0, 3, 2]);
-    // PCB negro mate con un leve brillo de laca (la textura original no es plana y se ve mal recortada)
-    const m = new THREE.MeshStandardMaterial({ color: 0x121313, roughness: 0.55, metalness: 0.1, side: THREE.DoubleSide });
-    keep.push({ name: 'pcb', g, mat: m });
-  }
-  const slab = new THREE.BoxGeometry(0.03, Y1 - Y0, Z1 - Z0); slab.translate(0.08, (Y0 + Y1) / 2, (Z0 + Z1) / 2);
-  keep.push({ name: 'slab', g: slab, mat: new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.6 }) });
-  const ks = 0.941;
-  const dm = place(keep, ks, (b) => V(0.098 * ks - 0.0, b.max.y, b.min.z), [-1.12, 1.7, -1.45]);
-  const onBoard = (gx, gy) => [gy * ks + dm.y, gx * ks + dm.z];
-  out.mb = merge(keep);
-  const [sy, sz] = onBoard(-0.612, 0.198);
-  const sockTop = surfaceX(out.mb, sy, sz) ?? -1.03;
-  out.cpuBase = [sockTop, sy, sz];
-  out.ramBases = [0.026, 0.224].map((gx) => { const [y, z] = onBoard(gx, 0.198); return [(surfaceX(out.mb, y, z) ?? -1.0) - 0.03, y, z]; });
-  const bf = surfaceX(out.mb, ...onBoard(-0.69, -0.557)) ?? -1.08;
-  out.ssdBase = [bf + 0.02, ...onBoard(-0.905, -0.557)];
+  // Placa Mini-ITX hecha por código, completa y al detalle (ver buildItxBoard)
+  const itxb = buildItxBoard();
+  out.mb = itxb.items; out.cpuBase = itxb.cpuBase; out.ramBases = itxb.ramBases; out.ssdBase = null;
 
   // AMD Wraith Stealth (disipador bajo, 54 mm)
   const wr = bake(wrS, basis([0, 1, 0], [1, 0, 0], [0, 0, 1]));
-  place(wr, 1.05 / boxOf(wr).getSize(V()).y, (b) => V(b.min.x, ctr(b).y, ctr(b).z), [0, 0, 0]);
+  place(wr, 0.95 / boxOf(wr).getSize(V()).y, (b) => V(b.min.x, ctr(b).y, ctr(b).z), [0, 0, 0]);
   out.cooler = merge(wr);
   out.gpuShift = [0, -0.73, 0.69];       // la 4060 baja a las ranuras del Ncase y su bracket queda en el panel trasero
   return out;
@@ -416,7 +482,8 @@ const gpuFromFile = (key, file, B, len) => once(key, async () => {
   return { items: merge(l), power: [b.max.x + 0.02, b.max.y - 0.14, (b.min.z + b.max.z) / 2 + 0.35] };
 });
 const kit3080 = () => gpuFromFile('3080', 'msi-3080-trio', basis([0, 0, 1], [0, -1, 0], [-1, 0, 0]), 3.23);
-const kit3070 = () => gpuFromFile('3070', 'rtx3070', basis([0, 0, 1], [0, -1, 0], [-1, 0, 0]), 2.42);
+// Gigabyte RTX 4090 AERO (blanca): archivo con el largo en z (bracket en +z), PCIe hacia -x, ventiladores hacia -y
+const kitAero = () => gpuFromFile('aero', 'aero-4090', basis([1, 0, 0], [0, 1, 0], [0, 0, -1]), 3.42);
 
 // Ventiladores Lian Li UNI FAN SL120 (negro o blanco)
 const kitLianLi = (color) => once('lianli-' + color, async () => {
@@ -444,7 +511,7 @@ export async function applyRealParts(pc, variant = {}) {
     BOARDS[variant.board] ? kitBoard(variant.board) : null,
     variant.cpu === 'i9' ? kitI9() : null,
     variant.ram === 'trident' ? kitTrident() : variant.ram === 'vengeance' ? kitVengeance() : null,
-    variant.gpu === '3080trio' ? kit3080() : variant.gpu === '3070fe' ? kit3070() : null,
+    variant.gpu === '3080trio' ? kit3080() : variant.gpu === 'aero4090' ? kitAero() : null,
     variant.fans?.startsWith('lianli') ? kitLianLi(variant.fans.split('-')[1]) : null,
   ]);
   const shell = itx || v2 || kit;

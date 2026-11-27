@@ -158,7 +158,7 @@ export const VARIANTS = [
     },
   },
   {
-    id: 'trabajo', nombre: 'PC de trabajo y edición', spec: 'Intel Core i9-11900K · RTX 4060 · MSI Z590 ACE · Cooler Master · gabinete blanco', case: 'v2', board: 'z590', cpu: 'i9', cooler: 'cm', ram: 'vengeance', gpu: 'rtx4060', fans: 'lianli-white',
+    id: 'trabajo', nombre: 'PC de trabajo y edición', spec: 'Intel Core i9-11900K · RTX 4090 AERO · MSI Z590 ACE · Cooler Master · gabinete blanco', case: 'v2', board: 'z590', cpu: 'i9', cooler: 'cm', ram: 'vengeance', gpu: 'aero4090', fans: 'lianli-white',
     info: {
       mb: {
         tipo: 'Placa madre', logo: 'msi', nombre: 'MSI MEG Z590 ACE',
@@ -219,7 +219,7 @@ export const VARIANTS = [
     },
   },
   {
-    id: 'chico', nombre: 'PC chico (ITX)', spec: 'Ryzen 9 5900X · RTX 3070 Founders · Wraith Stealth · Ncase M1', case: 'ncase', board: 'itx', cpu: 'am4', cooler: 'wraith', ram: 'trident', gpu: '3070fe', fans: 'none',
+    id: 'chico', nombre: 'PC chico (ITX)', spec: 'Ryzen 9 5900X · RTX 4060 · placa Mini-ITX · Wraith Stealth · Ncase M1', case: 'ncase', board: 'itx', cpu: 'am4', cooler: 'wraith', ram: 'trident', gpu: 'rtx4060', fans: 'none',
     info: {
       case: {
         tipo: 'Gabinete', logo: null, nombre: 'Ncase M1 (Mini-ITX, 12,7 L)',
@@ -283,13 +283,15 @@ export const VARIANTS = [
 {
   const chico = VARIANTS.find((x) => x.id === 'chico').info;
   chico.ram = VARIANTS.find((x) => x.id === 'gamer').info.ram;
-  chico.gpu = {
-    tipo: 'Tarjeta de video', logo: 'nvidia', nombre: 'NVIDIA GeForce RTX 3070 Founders Edition',
-    desc: 'La versión de NVIDIA: corta (242 mm), de 2 ranuras y con ventiladores a ambos lados, ideal para gabinetes ITX.',
-    specs: [['GPU', 'NVIDIA GA104'], ['Núcleos CUDA', '5.888'], ['Memoria', '8 GB GDDR6 · 256 bit'], ['Consumo', '220 W'], ['Conector', '12 pines (adaptador 2 × 8)'], ['Largo', '242 mm']],
-    instalar: 'Entra en el PCIe x16 de la placa ITX; en el Ncase queda bajo la placa, con el aire entrando por el lateral.',
-    fallas: 'Adaptador de 12 pines mal enchufado, pasta térmica seca después de 3–4 años, ventiladores que suenan a baja velocidad.',
-    alt: 'RTX 4060 Ti · Radeon RX 7700 XT · RTX 4070 (versión corta)',
+  const trabajo = VARIANTS.find((x) => x.id === 'trabajo').info;
+  chico.gpu = trabajo.gpu;                      // la RTX 4060 (2 ranuras) cabe en el Ncase
+  trabajo.gpu = {
+    tipo: 'Tarjeta de video', logo: 'nvidia', nombre: 'Gigabyte GeForce RTX 4090 AERO OC 24G',
+    desc: 'La 4090 en blanco y plata: 24 GB GDDR6X para render 3D, edición en 8K y modelos de IA local, con el disipador WINDFORCE de tres ventiladores.',
+    specs: [['GPU', 'NVIDIA AD102'], ['Núcleos CUDA', '16.384'], ['Memoria', '24 GB GDDR6X · 384 bit'], ['Consumo', '450 W'], ['Conector', '12VHPWR (16 pines)'], ['Largo', '342 mm']],
+    instalar: 'Se sacan 4 tapas traseras, entra en el PCIe x16 hasta el clic, se atornilla y se usa el soporte anti-pandeo que trae; el cable de 16 pines tiene que entrar hasta el fondo.',
+    fallas: 'Conector de 16 pines a medio enchufar (se derrite), pandeo que daña el slot PCIe, fuente de menos de 850 W que se apaga con carga.',
+    alt: 'ASUS ProArt RTX 4080 SUPER · RTX 4070 Ti SUPER · Radeon PRO W7800',
   };
 }
 
