@@ -149,7 +149,69 @@ export const VARIANTS = [
       },
     },
   },
+  {
+    id: 'chico', nombre: 'PC chico (ITX)', spec: 'Ryzen 9 5900X · RTX 4060 · Wraith Stealth · Ncase M1', case: 'ncase', cooler: 'wraith', gpu: 'rtx4060',
+    info: {
+      case: {
+        tipo: 'Gabinete', logo: null, nombre: 'Ncase M1 (Mini-ITX, 12,7 L)',
+        desc: 'Uno de los gabinetes SFF más conocidos: aluminio, placa Mini-ITX, tarjeta de video de hasta 317 mm y fuente SFX, en el espacio de una caja de zapatos.',
+        specs: [['Formato', 'Mini-ITX'], ['Volumen', '12,7 litros'], ['GPU máx.', '317 mm, 2 ranuras'], ['Fuente', 'SFX / SFX-L'], ['Material', 'Aluminio']],
+        instalar: 'En un ITX el orden importa: primero la placa con CPU, RAM y M.2 fuera del gabinete, después la fuente y los cables cortos, y la tarjeta de video al final.',
+        fallas: 'Temperaturas altas por poco flujo de aire, cables que tocan los ventiladores, tarjetas de video que no caben por el largo o el grosor.',
+        alt: 'Cooler Master NR200P · Fractal Design Terra · Lian Li A4-H2O · SSUPD Meshroom S',
+      },
+      mb: {
+        tipo: 'Placa madre', logo: 'asus', nombre: 'Placa Mini-ITX AMD X570 (AM4)',
+        desc: 'Todo lo esencial en poco espacio: socket AM4, 2 slots de RAM, M.2 de cuarta generación, Wi-Fi y un PCIe x16 para la tarjeta de video.',
+        specs: [['Socket', 'AM4'], ['Chipset', 'AMD X570'], ['Memoria', '2 × DDR4, hasta 64 GB'], ['PCIe', '1 × 4.0 x16'], ['M.2', '2 (uno atrás)']],
+        instalar: 'Se arma fuera del gabinete (CPU, RAM, M.2 y disipador) y se entra completa; cuesta llegar a los conectores una vez adentro.',
+        fallas: 'VRM caliente por poco flujo de aire, BIOS antigua sin soporte para Ryzen 5000, el conector de 8 pines difícil de enchufar.',
+        alt: 'ASUS ROG STRIX B550-I · Gigabyte B650I AORUS ULTRA · MSI MPG B650I EDGE',
+      },
+      cooler: {
+        tipo: 'Disipador de CPU', logo: 'amd', nombre: 'AMD Wraith Stealth',
+        desc: 'El disipador que viene con muchos Ryzen: bajo (54 mm), ideal para gabinetes chicos y procesadores de hasta 65 W.',
+        specs: [['Altura', '54 mm'], ['Ventilador', '92 mm'], ['TDP', 'hasta 65 W'], ['Socket', 'AM4']],
+        instalar: 'Trae la pasta térmica puesta. Se atornillan las 4 esquinas en cruz, de a poco, sobre el backplate de la placa.',
+        fallas: 'Con un Ryzen 9 se queda corto: recomendamos un disipador de perfil bajo mejor (Noctua NH-L12S) o un AIO de 240 mm.',
+        alt: 'Noctua NH-L12S · Thermalright AXP90-X47 · ID-Cooling IS-55',
+      },
+      psu: {
+        tipo: 'Fuente de poder', logo: 'corsair', nombre: 'Fuente SFX 750 W',
+        desc: 'Formato SFX: la mitad del tamaño de una ATX, totalmente modular y 80 PLUS Platinum. Necesaria en gabinetes ITX.',
+        specs: [['Potencia', '750 W'], ['Formato', 'SFX (125 × 63,5 × 100 mm)'], ['Eficiencia', '80 PLUS Platinum'], ['Modular', 'Total']],
+        instalar: 'Va al frente, con cables cortos o a medida para que no estorben el flujo de aire.',
+        fallas: 'Cables largos que tapan el ventilador de la tarjeta, ventilador de 92 mm ruidoso con carga alta.',
+        alt: 'Corsair SF750 · Cooler Master V850 SFX · Lian Li SP750',
+      },
+      fans: {
+        tipo: 'Ventilación', logo: null, nombre: 'Flujo de aire de un ITX',
+        desc: 'En un gabinete chico el aire lo mueven la tarjeta de video, el disipador y la fuente; se pueden agregar 2 ventiladores delgados abajo.',
+        specs: [['Opcional', '2 × 120 mm slim abajo'], ['Orientación', 'Meter aire desde abajo']],
+        instalar: 'Ventiladores slim de 15 mm para no chocar con la tarjeta de video.',
+        fallas: 'Tarjeta ahogada sin espacio bajo los ventiladores.',
+        alt: 'Noctua NF-A12x15 · Arctic P12 Slim',
+      },
+      cables: {
+        tipo: 'Cableado', logo: null, nombre: 'Cables cortos (a medida)',
+        desc: 'En un ITX se usan cables cortos o hechos a medida: los de una fuente normal no caben y tapan el aire.',
+        specs: [['ATX', '24 pines corto'], ['CPU', 'EPS 8 pines'], ['GPU', 'PCIe 8 pines']],
+        instalar: 'Se conectan antes de entrar la tarjeta de video; después no se alcanza.',
+        fallas: 'Equipo que no prende por el EPS mal enchufado detrás de la placa.',
+        alt: 'Cables CableMod o los cortos de la misma fuente',
+      },
+      nvme: {
+        tipo: 'Almacenamiento', logo: 'samsung', nombre: 'Samsung 990 PRO 2 TB',
+        desc: 'Un solo SSD NVMe en el M.2 de la placa: rápido y sin cables.',
+        specs: [['Interfaz', 'PCIe 4.0 x4'], ['Lectura', '7.450 MB/s'], ['Escritura', '6.900 MB/s']],
+        instalar: 'Entra a 30° en el M.2 y se fija con el tornillo o el seguro.',
+        fallas: 'Temperatura alta sin disipador en gabinetes chicos.',
+        alt: 'WD_BLACK SN850X · Crucial T500',
+      },
+    },
+  },
 ];
+VARIANTS.find((x) => x.id === 'chico').info.gpu = VARIANTS.find((x) => x.id === 'trabajo').info.gpu;
 
 export const BUILD_STEPS = [
   { id: 'mb', txt: 'Placa madre sobre los standoffs' },

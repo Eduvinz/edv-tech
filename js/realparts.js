@@ -277,6 +277,83 @@ function addGrommets(pc) {
   [[geos, rubber], [holes, hole]].forEach(([list, mat]) => { const mesh = new THREE.Mesh(mergeGeometries(list), mat); mesh.receiveShadow = true; mesh.userData.partId = 'case'; pc.parts.case.pieces[0].obj.add(mesh); });
 }
 
+/* PC chico: Ncase M1 (ITX, ~13 L) + placa compacta recortada de la X570 + Wraith Stealth.
+   Archivo del Ncase: x = ancho (lado de la placa +x), y = alto, z = profundidad (panel trasero en -z). */
+const kitITX = () => once('itx', async () => {
+  const [caseS, mbS, wrS] = await Promise.all([load('ncase-m1'), load('asus-prime-x570'), load('amd-wraith-stealth')]);
+  const k = 0.8;
+  const MC = new THREE.Matrix4().set(-k, 0, 0, -0.392, 0, k, 0, 0, 0, 0, k, 1.2, 0, 0, 0, 1);
+  const all = bake(caseS, MC);
+  // la carcasa y sus mallas perforadas vienen juntas: se separan en lateral abierto, lateral de la placa, techo, frente y marco
+  const [side, r1] = splitTris(all, (c) => c.x > 0.3);
+  const [rear, r2] = splitTris(r1, (c) => c.x < -1.15);
+  const [top, r3] = splitTris(r2, (c) => c.y > 1.72);
+  const [front, rest] = splitTris(r3, (c) => c.z > 1.93);
+  const out = { case: merge(rest), glass: merge(side), rear: merge(rear), top: merge(top), front: merge(front), cover: [] };
+  out.floorY = boxOf(all).min.y;
+
+  // Placa compacta: se recorta la parte de arriba de la X570 (I/O, socket, RAM y M.2_1). El PCB se rehace
+  // como un rectángulo con la misma textura para que el borde quede limpio.
+  const raw = bake(mbS, SWAP).map((it) => ({ ...it, g: ensureIndex(it.g.toNonIndexed()) }));
+  const Z0 = -2.12, Z1 = 0.3, Y0 = -0.85, Y1 = 1.18;
+  const inCrop = (c) => c.z > Z0 && c.z < Z1 && c.y > Y0 && c.y < Y1;
+  const isPcb = (c, it) => /Mobo/.test(it.mat.name || '') && Math.abs(c.x - 0.098) < 0.004;
+  const keep = [], v = V(), c = V();
+  let uvMap = null, pcbMat = null;
+  raw.forEach((it) => {
+    const pos = it.g.attributes.position, uv = it.g.attributes.uv, idx = it.g.index.array, A = [];
+    for (let i = 0; i < idx.length; i += 3) {
+      c.set(0, 0, 0); for (let j = 0; j < 3; j++) c.add(v.fromBufferAttribute(pos, idx[i + j])); c.multiplyScalar(1 / 3);
+      if (isPcb(c, it)) {
+        if (!uvMap && uv) {                       // mapeo plano (z, y) → (u, v) a partir de un triángulo del PCB
+          const P = [0, 1, 2].map((j) => [pos.getZ(idx[i + j]), pos.getY(idx[i + j]), uv.getX(idx[i + j]), uv.getY(idx[i + j])]);
+          const det = (P[1][0] - P[0][0]) * (P[2][1] - P[0][1]) - (P[2][0] - P[0][0]) * (P[1][1] - P[0][1]);
+          if (Math.abs(det) > 1e-6) {
+            const solve = (t) => {
+              const a = ((P[1][t] - P[0][t]) * (P[2][1] - P[0][1]) - (P[2][t] - P[0][t]) * (P[1][1] - P[0][1])) / det;
+              const b = ((P[2][t] - P[0][t]) * (P[1][0] - P[0][0]) - (P[1][t] - P[0][t]) * (P[2][0] - P[0][0])) / det;
+              return (z, y) => P[0][t] + a * (z - P[0][0]) + b * (y - P[0][1]);
+            };
+            uvMap = [solve(2), solve(3)]; pcbMat = it.mat;
+          }
+        }
+        continue;
+      }
+      if (inCrop(c)) A.push(idx[i], idx[i + 1], idx[i + 2]);
+    }
+    if (A.length) { const g = it.g.clone(); g.setIndex(A); keep.push({ ...it, g }); }
+  });
+  if (uvMap) {
+    const g = new THREE.BufferGeometry();
+    const P = [[Z0, Y0], [Z1, Y0], [Z1, Y1], [Z0, Y1]];
+    g.setAttribute('position', new THREE.Float32BufferAttribute(P.flatMap(([z, y]) => [0.098, y, z]), 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(P.flatMap(() => [1, 0, 0]), 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(P.flatMap(([z, y]) => [uvMap[0](z, y), uvMap[1](z, y)]), 2));
+    g.setIndex([0, 2, 1, 0, 3, 2]);
+    const m = pcbMat.clone(); m.side = THREE.DoubleSide;
+    keep.push({ name: 'pcb', g, mat: m });
+  }
+  const slab = new THREE.BoxGeometry(0.03, Y1 - Y0, Z1 - Z0); slab.translate(0.08, (Y0 + Y1) / 2, (Z0 + Z1) / 2);
+  keep.push({ name: 'slab', g: slab, mat: new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.6 }) });
+  const ks = 0.941;
+  const dm = place(keep, ks, (b) => V(0.098 * ks - 0.0, b.max.y, b.min.z), [-1.12, 1.7, -1.45]);
+  const onBoard = (gx, gy) => [gy * ks + dm.y, gx * ks + dm.z];
+  out.mb = merge(keep);
+  const [sy, sz] = onBoard(-0.612, 0.198);
+  const sockTop = surfaceX(out.mb, sy, sz) ?? -1.03;
+  out.cpuBase = [sockTop, sy, sz];
+  out.ramBases = [0.026, 0.224].map((gx) => { const [y, z] = onBoard(gx, 0.198); return [(surfaceX(out.mb, y, z) ?? -1.0) - 0.03, y, z]; });
+  const bf = surfaceX(out.mb, ...onBoard(-0.69, -0.557)) ?? -1.08;
+  out.ssdBase = [bf + 0.02, ...onBoard(-0.905, -0.557)];
+
+  // AMD Wraith Stealth (disipador bajo, 54 mm)
+  const wr = bake(wrS, basis([0, 1, 0], [1, 0, 0], [0, 0, 1]));
+  place(wr, 1.05 / boxOf(wr).getSize(V()).y, (b) => V(b.min.x, ctr(b).y, ctr(b).z), [0, 0, 0]);
+  out.cooler = merge(wr);
+  out.gpuShift = [0, -0.73, 0.69];       // la 4060 baja a las ranuras del Ncase y su bracket queda en el panel trasero
+  return out;
+});
+
 let kitP = null;
 const realKit = () => (kitP ||= buildKit().catch((e) => { console.warn('Modelos 3D reales no disponibles, quedan las piezas por código.', e); return null; }));
 
@@ -284,13 +361,14 @@ const realKit = () => (kitP ||= buildKit().catch((e) => { console.warn('Modelos 
 export async function applyRealParts(pc, variant = {}) {
   const kit = await realKit();
   if (!kit) return false;
-  const [v2, aio, cm, g4060] = await Promise.all([
+  const [v2, aio, cm, g4060, itx] = await Promise.all([
     variant.case === 'v2' ? kitCaseV2() : null,
     variant.cooler === 'aio' ? kitAIO(kit.coolerBase) : null,
     variant.cooler === 'cm' ? kitCM() : null,
     variant.gpu === 'rtx4060' ? kit4060() : null,
+    variant.case === 'ncase' ? kitITX() : null,
   ]);
-  const shell = v2 || kit;
+  const shell = itx || v2 || kit;
   const P = (id) => pc.parts[id].pieces;
 
   // origin: punto del equipo al que corresponde el (0,0,0) de la geometría
@@ -317,26 +395,29 @@ export async function applyRealParts(pc, variant = {}) {
   fill(front, shell.front, undefined, (m) => { if (isGlassMat(m)) { m.material = glassMat; m.renderOrder = 10; m.userData.isGlass = true; } });
   fill(top, shell.top);
   fill(cover, shell.cover);
-  pc.floorY = v2 ? v2.floorY : -2.68;
+  pc.floorY = (itx || v2) ? (itx || v2).floorY : -2.68;
 
-  fill(P('mb')[0], kit.mb);
-  const cpu = P('cpu')[0]; cpu.base.set(...kit.cpuBase); fill(cpu, kit.cpu, kit.cpuBase);
-  const cool = P('cooler')[0]; cool.base.set(...kit.coolerBase);
+  const board = itx || kit;
+  fill(P('mb')[0], board.mb);
+  const cpu = P('cpu')[0]; cpu.base.set(...board.cpuBase); fill(cpu, kit.cpu, board.cpuBase);
+  const coolerBase = itx ? [board.cpuBase[0] + boxOf(kit.cpu).getSize(V()).x, board.cpuBase[1], board.cpuBase[2]] : kit.coolerBase;
+  const cool = P('cooler')[0]; cool.base.set(...coolerBase);
+  if (itx) fill(cool, itx.cooler, coolerBase);
   if (aio) fill(cool, aio.items);                                  // bomba, mangueras y radiador se mueven juntos
   if (cm) fill(cool, cm.items, kit.coolerBase);
 
   // almacenamiento: 990 PRO real en el M.2_1; el segundo M.2 de la placa queda bajo su disipador (no se dibuja)
   const nv = pc.parts.nvme;
   const [ssd, wd, crucial] = nv.pieces;
-  ssd.base.set(...kit.ssdBase); fill(ssd, kit.ssd, kit.ssdBase);
+  ssd.base.set(...board.ssdBase); fill(ssd, kit.ssd, board.ssdBase);
   // tornillo del M.2 en el extremo opuesto al conector
   ssd.obj.add(pc.screws([[boxTop(kit.ssd) + 0.004, 0, -0.395, '+x']], 0.02, 0x8a8a8a, 0x1a1a1a));
   wd.obj.parent?.remove(wd.obj);
   nv.pieces = nv.pieces.filter((p) => p !== wd);
   crucial.base.set(-1.142, 0.9, -0.55); // detrás de la placa, en el recorte de la bandeja
 
-  P('ram').forEach((p, i) => { p.base.set(...kit.ramBases[i]); fill(p, kit.ram, kit.ramBases[i]); });
-  fill(P('gpu')[0], g4060 ? g4060.items : kit.gpu);
+  P('ram').forEach((p, i) => { p.base.set(...board.ramBases[i]); fill(p, kit.ram, board.ramBases[i]); });
+  fill(P('gpu')[0], g4060 ? g4060.items : kit.gpu, itx ? itx.gpuShift : undefined);
 
   // ventiladores: marco fijo + rotor que gira; 3 al frente y 1 atrás, dentro del marco de acero
   // con AIO, el radiador trae sus 2 ventiladores: salen los 2 frontales de arriba
@@ -361,7 +442,16 @@ export async function applyRealParts(pc, variant = {}) {
     p.obj.add(pc.screws([[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([a, b]) => [a * 0.525, b * 0.525, zf, rearFan ? '-z' : '+z']), 0.03, 0x2a2a2a, 0x0a0a0a));
   });
 
-  pc.reroute12V(g4060 ? g4060.power : kit.gpuPower); // incluye afterSwap()
+  if (itx) {
+    // PC chico: sin ventiladores de gabinete, sin cables largos ni SSD extra; fuente SFX al frente, sobre la tarjeta
+    const drop = (id, keepFn = () => false) => { const part = pc.parts[id]; part.pieces.filter((x) => !keepFn(x)).forEach((x) => x.obj.parent?.remove(x.obj)); part.pieces = part.pieces.filter(keepFn); };
+    drop('fans'); drop('cables'); drop('nvme', (x) => x === ssd);
+    const psu = P('psu')[0];
+    psu.base.set(-0.78, 1.03, 1.4); psu.obj.rotation.set(0, 0, Math.PI / 2); psu.obj.scale.set(0.83, 0.74, 0.62);
+    psu.obj.traverse((o) => { if (o.userData.flip) o.visible = false; });   // sin la etiqueta de la RM850x
+    pc.afterSwap();
+  } else pc.reroute12V(g4060 ? g4060.power : kit.gpuPower); // incluye afterSwap()
   if (v2) addGrommets(pc);
+  pc.update(0, 0);
   return true;
 }
